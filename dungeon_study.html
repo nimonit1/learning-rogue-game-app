@@ -109,6 +109,12 @@ canvas#iso{display:block;width:100%;height:100%}
 .d-btn{width:100%;background:var(--bg2);border:.5px solid var(--border);border-left:3px solid var(--dc,var(--blue));border-radius:11px;padding:11px;margin-bottom:7px;display:flex;align-items:center;gap:9px;color:white;text-align:left;transition:background .15s}
 .d-btn:hover{background:var(--bg3)}
 .d-icn{font-size:20px;flex-shrink:0}.d-nm{font-weight:700;font-size:12px}.d-mt{font-size:9px;color:var(--muted);margin-top:1px}.d-arr{margin-left:auto;font-size:13px}
+.subj-grp{margin-bottom:10px}
+.subj-hdr{width:100%;background:var(--bg2);border:.5px solid var(--border);border-radius:9px;padding:9px 12px;display:flex;align-items:center;gap:8px;color:white;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s;margin-bottom:4px;font-family:inherit}
+.subj-hdr:hover{background:var(--bg3)}
+.subj-hdr .s-arr{margin-left:auto;font-size:11px;transition:transform .2s;display:inline-block}
+.subj-grp.collapsed .s-arr{transform:rotate(-90deg)}
+.subj-grp.collapsed .subj-body{display:none}
 .zukan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px;width:100%}
 .zk-cell{background:var(--bg2);border:.5px solid var(--border);border-radius:9px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:72px}
 .zk-cell.locked{opacity:.35;filter:grayscale(1)}
@@ -376,7 +382,7 @@ function expForLevel(lv){ let s=0; for(let i=1;i<lv;i++) s+=expNeeded(i); return
 const TITLES=[[1,"見習い冒険者"],[5,"冒険者"],[10,"熟練冒険者"],[20,"勇者"],[30,"猛者"],[50,"英雄"],[75,"伝説の戦士"],[100,"覇者"],[200,"不滅の英雄"],[500,"宇宙の守護者"],[1000,"時の支配者"],[9999,"全知の存在"]];
 function titleFor(lv){ let t=TITLES[0]; for(const [l,n] of TITLES){ if(lv>=l) t=[l,n]; } return t[1]; }
 const MSIZE=9;
-const APP_VERSION="1.0.0";
+const APP_VERSION="1.0.1";
 const LS_KEY="dungeon_study_dungeons_v4";
 const COLOR_PRESETS=["#00809E","#EA8712","#9B59B6","#E24B4A","#27AE60","#2980B9","#C0392B","#8E44AD","#16A085","#D35400"];
 const AVATARS=[
@@ -608,6 +614,8 @@ const DEFAULT_DUNGEONS=[
 ];
 let DUNGEONS=[];
 let CURSE_LIST=[];
+const SUBJ_ICON={"数学":"📐","理科":"🔬","英語":"🌍","社会":"🏛️","国語":"📖"};
+const collapsedSubjects=new Set();
 let ZUKAN={};
 
 // ════════════════════════════════════════════════
@@ -1278,15 +1286,38 @@ function updCurseBar(){
 let editingDungeonId=null;
 function renderDungeonList(){
   const el=document.getElementById("d-list"); if(!el) return;
-  el.innerHTML=DUNGEONS.map(d=>
-    '<button class="d-btn" style="--dc:'+d.color+'" data-id="'+d.id+'">'
-    +'<span class="d-icn">'+d.icon+'</span>'
-    +'<div><div class="d-nm">'+d.name+'</div>'
-    +'<div class="d-mt">'+d.subject+' ▸ '+(d.enemies?d.enemies.length:0)+'問 ▸ 探索</div></div>'
-    +'<span class="d-arr" style="color:'+d.color+'">▶</span>'
-    +'</button>'
-  ).join("");
+  const groups=[]; const seen={};
+  DUNGEONS.forEach(d=>{ if(!seen[d.subject]){seen[d.subject]=true;groups.push(d.subject);} });
+  el.innerHTML=groups.map(subj=>{
+    const list=DUNGEONS.filter(d=>d.subject===subj);
+    const icon=SUBJ_ICON[subj]||"📂";
+    const isClosed=collapsedSubjects.has(subj);
+    return '<div class="subj-grp'+(isClosed?" collapsed":"")+'" data-subj="'+subj+'">'
+      +'<button class="subj-hdr">'
+      +'<span>'+icon+'</span><span>'+subj+'</span>'
+      +'<span style="color:var(--muted);font-weight:400;font-size:10px">'+list.length+'ダンジョン</span>'
+      +'<span class="s-arr">▼</span>'
+      +'</button>'
+      +'<div class="subj-body">'
+      +list.map(d=>
+        '<button class="d-btn" style="--dc:'+d.color+'" data-id="'+d.id+'">'
+        +'<span class="d-icn">'+d.icon+'</span>'
+        +'<div><div class="d-nm">'+d.name+'</div>'
+        +'<div class="d-mt">'+d.subject+' ▸ '+(d.enemies?d.enemies.length:0)+'問 ▸ 探索</div></div>'
+        +'<span class="d-arr" style="color:'+d.color+'">▶</span>'
+        +'</button>'
+      ).join("")
+      +'</div></div>';
+  }).join("");
   el.querySelectorAll(".d-btn").forEach(b=>{ b.onclick=()=>enterDungeon(DUNGEONS.find(x=>x.id===b.dataset.id)); });
+  el.querySelectorAll(".subj-hdr").forEach(h=>{
+    h.onclick=()=>{
+      const grp=h.closest(".subj-grp");
+      const subj=grp.dataset.subj;
+      if(collapsedSubjects.has(subj)) collapsedSubjects.delete(subj); else collapsedSubjects.add(subj);
+      grp.classList.toggle("collapsed");
+    };
+  });
 }
 function renderAdminList(){
   const el=document.getElementById("admin-dungeon-list"); if(!el) return;
