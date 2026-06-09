@@ -1,0 +1,1522 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>DungeonStudy</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--blue:#00809E;--orange:#EA8712;--red:#E24B4A;--green:#00C896;--gold:#FFD700;--purple:#9B59B6;--bg:#0a0d14;--bg2:rgba(255,255,255,.05);--bg3:rgba(255,255,255,.08);--border:rgba(255,255,255,.1);--muted:rgba(255,255,255,.35)}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Noto Sans JP','Yu Gothic',sans-serif;background:var(--bg);color:rgba(255,255,255,.92)}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+button:active{transform:scale(.95)}
+#app{width:100%;max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+#hud{background:rgba(10,13,20,.96);border-bottom:1px solid rgba(255,255,255,.07);padding:6px 10px;display:flex;align-items:center;gap:8px;flex-shrink:0;z-index:50}
+.hud-av{width:30px;height:30px;flex-shrink:0;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.15)}
+.hud-mid{flex:1;min-width:0}
+.hud-top{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.hud-name{font-size:10px;font-weight:700;color:var(--orange);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px}
+.hud-ttl{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;max-width:80px}
+.lv-badge{background:var(--orange);color:#000;font-size:9px;font-weight:900;padding:1px 5px;border-radius:6px;white-space:nowrap;flex-shrink:0}
+.exp-row{display:flex;align-items:center;gap:4px}
+.exp-bg{flex:1;height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden;position:relative}
+.exp-fill{height:100%;background:linear-gradient(90deg,var(--orange),#ffcc44);border-radius:3px;transition:width .4s}
+.exp-num{font-size:8px;color:var(--muted);min-width:44px;text-align:right;white-space:nowrap}
+.hud-hp{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.hp-lab{font-size:8px;color:var(--muted)}
+.hearts{display:flex;gap:1px}
+.heart{font-size:12px;transition:filter .3s}
+.heart.empty{filter:grayscale(1) opacity(.18)}
+#game-area{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column}
+#iso-wrap{flex:1;position:relative;overflow:hidden;background:#0a0d14}
+canvas#iso{display:block;width:100%;height:100%}
+#lvup-banner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.88);border:2px solid var(--gold);border-radius:14px;padding:10px 22px;text-align:center;opacity:0;transition:opacity .3s;z-index:80;pointer-events:none;backdrop-filter:blur(6px)}
+#lvup-banner.show{opacity:1}
+.lvup-h{font-size:18px;font-weight:900;color:var(--gold)}
+.lvup-sub{font-size:11px;color:rgba(255,255,255,.65);margin-top:2px}
+#toast{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.88);color:white;padding:6px 14px;border-radius:16px;font-size:11px;font-weight:600;opacity:0;transition:opacity .3s;z-index:99;white-space:nowrap;pointer-events:none;max-width:92%;text-align:center}
+#toast.show{opacity:1}
+#dungeon-menu{display:none;position:absolute;inset:0;z-index:110;background:rgba(7,11,16,.9);backdrop-filter:blur(8px);flex-direction:column;align-items:center;justify-content:center;gap:0;padding:18px 16px}
+#status-popup{display:none;position:absolute;inset:0;z-index:120;background:rgba(7,11,16,.93);backdrop-filter:blur(8px);flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
+#dpad{flex-shrink:0;background:rgba(10,13,20,.97);border-top:1px solid rgba(255,255,255,.06);padding:7px 10px 9px;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:auto auto auto;gap:4px;align-items:center;justify-items:center}
+.dbtn{width:50px;height:42px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.11);border-radius:10px;font-size:18px;color:rgba(255,255,255,.8);display:flex;align-items:center;justify-content:center}
+.dbtn:active{background:rgba(0,128,158,.3)}
+.dbtn:disabled{opacity:.18;cursor:default}
+.dctr{width:38px;height:38px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:50%;font-size:16px;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer}
+.dspc{width:50px;height:42px}
+.dinfo{font-size:9px;color:rgba(255,255,255,.22);grid-column:1/4;text-align:center;margin-top:1px}
+#bov{position:absolute;inset:0;z-index:100;display:flex;flex-direction:column;background:rgba(10,13,20,.98);overflow-y:auto}
+#bov.hidden{display:none}
+.bov-in{padding:10px 13px 18px}
+.b-loc{font-size:9px;color:var(--muted);margin-bottom:7px}
+.en-card{border-radius:14px;padding:11px;margin-bottom:10px;position:relative;overflow:hidden;border:1px solid var(--ec,rgba(255,255,255,.1))}
+.en-bg{position:absolute;inset:0;opacity:.07}
+.en-ct{position:relative;z-index:1;display:flex;gap:10px;align-items:center}
+.en-sw{flex-shrink:0;width:76px;height:76px}
+.en-inf{flex:1;min-width:0}
+.en-nm{font-weight:700;font-size:13px;margin-bottom:3px}
+.en-hbg{height:5px;background:rgba(255,255,255,.1);border-radius:3px;margin-bottom:4px;overflow:hidden}
+.en-hfill{height:100%;border-radius:3px;transition:width .5s}
+.boss-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);background:var(--gold);color:#000;font-size:8px;font-weight:900;padding:2px 8px;border-radius:20px;z-index:2}
+.recall-box{background:rgba(0,200,255,.04);border:1px solid rgba(0,200,255,.14);border-radius:11px;padding:16px 12px;text-align:center;margin-bottom:9px}
+.rc-ttl{color:#00C8FF;font-weight:700;font-size:13px;margin-bottom:2px}
+.rc-desc{color:rgba(255,255,255,.45);font-size:10px;line-height:1.65;margin-bottom:7px}
+.rc-num{font-size:34px;font-weight:900;color:#00C8FF}
+.tmr-row{display:flex;justify-content:space-between;margin-bottom:3px}
+.tmr-lbl{font-size:9px;color:var(--muted)}
+.tmr-num{font-size:12px;font-weight:700}
+.tmr-bg{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.tmr-bar{height:100%;border-radius:2px;transition:width 1s linear,background .3s}
+.q-box{background:rgba(255,255,255,.04);border:.5px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.q-lbl{font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:3px}
+.q-txt{font-size:13px;font-weight:600;line-height:1.65}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+.ch{padding:10px 6px;border:.5px solid rgba(255,255,255,.09);border-radius:9px;font-size:12px;font-weight:600;background:rgba(255,255,255,.05);color:rgba(255,255,255,.8);line-height:1.4;transition:all .12s}
+.ch:hover:not(:disabled){background:rgba(0,128,158,.18);border-color:var(--blue)}
+.ch.correct{background:rgba(0,200,150,.18);border-color:var(--green);color:var(--green)}
+.ch.wrong{background:rgba(226,75,74,.18);border-color:var(--red);color:var(--red)}
+.hint-box{background:rgba(234,135,18,.08);border:.5px solid rgba(234,135,18,.28);border-radius:8px;padding:6px 10px;font-size:10px;color:var(--orange);margin-bottom:7px}
+.hint-btn{width:100%;background:transparent;border:.5px dashed rgba(234,135,18,.3);border-radius:8px;color:rgba(234,135,18,.5);font-size:9px;padding:5px;margin-bottom:7px}
+.res-msg{border:.5px solid;border-radius:9px;padding:8px 11px;font-size:11px;line-height:1.75;margin-bottom:7px}
+.res-msg.ok{background:rgba(0,200,150,.07);border-color:var(--green)}
+.res-msg.ng{background:rgba(226,75,74,.07);border-color:var(--red)}
+.r-ok{color:var(--green);font-weight:700}.r-ng{color:var(--red);font-weight:700}
+.r-ans{color:rgba(255,255,255,.45);font-size:10px}.r-curse{color:rgba(255,255,255,.22);font-size:9px}
+.r-spd{color:var(--orange);font-size:9px}.r-heal{color:#ff88cc;font-size:10px;font-weight:700}
+.next-btn{width:100%;padding:11px;background:var(--blue);color:white;border-radius:9px;font-size:13px;font-weight:700}
+.exp-pop{text-align:center;font-weight:900;font-size:18px;color:var(--orange);margin-bottom:4px;animation:fU .9s forwards}
+.heal-pop{text-align:center;font-weight:900;font-size:15px;color:#ff88cc;margin-bottom:4px;animation:fU .9s forwards}
+.dmg-num{position:absolute;font-size:20px;font-weight:900;pointer-events:none;animation:dmgFloat 1s forwards;z-index:200;text-shadow:0 2px 6px rgba(0,0,0,.8)}
+@keyframes fU{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-18px)}}
+@keyframes dmgFloat{0%{opacity:1;transform:translateY(0) scale(1.2)}100%{opacity:0;transform:translateY(-38px) scale(.8)}}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 18px;text-align:center;background:var(--bg);z-index:200;overflow-y:auto}
+.screen.hidden{display:none}
+.t-glow{position:absolute;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(0,128,158,.26) 0%,transparent 70%);top:34%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.t-logo{font-size:28px;font-weight:900;letter-spacing:2px;background:linear-gradient(135deg,#00C8FF,#00809E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.t-sub{font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:22px}
+.t-rules{font-size:9px;color:rgba(255,255,255,.18);line-height:2.2;margin-top:12px}
+.av-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:10px 0;width:100%;max-width:300px}
+.av-cell{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:9px 3px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:border-color .2s,background .2s}
+.av-cell.sel{border-color:var(--blue);background:rgba(0,128,158,.18)}
+.av-lbl{font-size:8px;color:var(--muted)}
+.name-inp{width:100%;max-width:250px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:white;font-size:13px;font-family:inherit;margin:7px 0 14px;text-align:center;outline:none}
+.name-inp:focus{border-color:var(--blue)}
+.page{width:100%;max-width:400px;padding:0 2px 16px}
+.pg-h{font-size:14px;font-weight:700;margin:9px 0 2px;text-align:left}
+.pg-sub{font-size:10px;color:var(--muted);margin-bottom:10px;text-align:left}
+.d-btn{width:100%;background:var(--bg2);border:.5px solid var(--border);border-left:3px solid var(--dc,var(--blue));border-radius:11px;padding:11px;margin-bottom:7px;display:flex;align-items:center;gap:9px;color:white;text-align:left;transition:background .15s}
+.d-btn:hover{background:var(--bg3)}
+.d-icn{font-size:20px;flex-shrink:0}.d-nm{font-weight:700;font-size:12px}.d-mt{font-size:9px;color:var(--muted);margin-top:1px}.d-arr{margin-left:auto;font-size:13px}
+.zukan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px;width:100%}
+.zk-cell{background:var(--bg2);border:.5px solid var(--border);border-radius:9px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:72px}
+.zk-cell.locked{opacity:.35;filter:grayscale(1)}
+.zk-nm{font-size:9px;font-weight:700;text-align:center;line-height:1.3}
+.zk-stars{display:flex;gap:1px}.zk-star{font-size:9px}.zk-star.off{opacity:.2}
+.zk-count{font-size:8px;color:var(--muted)}
+.end{position:absolute;inset:0;z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;background:var(--bg);overflow-y:auto}
+.end.hidden{display:none}
+.end-icon{font-size:46px;margin-bottom:7px}.end-h{font-size:19px;font-weight:900;margin-bottom:2px}
+.end-sub{font-size:11px;color:var(--muted);margin-bottom:12px}
+.stat-box{background:rgba(255,255,255,.05);border-radius:10px;padding:10px 16px;margin-bottom:12px;width:100%;max-width:250px}
+.s-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:.5px solid rgba(255,255,255,.06);color:rgba(255,255,255,.6)}
+.s-row:last-child{border-bottom:none}
+.log-box{font-size:9px;color:rgba(255,255,255,.18);line-height:2;margin-bottom:12px;max-width:290px;text-align:left;max-height:90px;overflow-y:auto}
+.big-btn{width:100%;max-width:250px;padding:12px;background:var(--blue);color:white;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:6px}
+.big-btn:hover{background:#006e89}
+.ghost-btn{width:100%;max-width:250px;padding:9px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.45);border-radius:10px;font-size:11px;margin-bottom:6px}
+.adm-inp{width:100%;background:rgba(255,255,255,.06);border:.5px solid var(--border);border-radius:8px;padding:8px 10px;color:white;font-size:12px;font-family:inherit;outline:none}
+.adm-inp:focus{border-color:var(--blue)}
+.adm-ta{width:100%;background:rgba(255,255,255,.05);border:.5px solid var(--border);border-radius:10px;color:rgba(255,255,255,.85);font-size:11px;font-family:'Courier New',monospace;padding:10px;resize:vertical;outline:none;line-height:1.6}
+.adm-ta:focus{border-color:var(--blue)}
+.adm-err{font-size:10px;color:var(--red);margin-top:4px;display:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="hud" style="display:none">
+    <svg id="hud-av" class="hud-av" viewBox="0 0 30 30"></svg>
+    <div class="hud-mid">
+      <div class="hud-top">
+        <span class="hud-name" id="hud-name">冒険者</span>
+        <span class="hud-ttl" id="hud-ttl"></span>
+        <span class="lv-badge" id="lv-badge">Lv.1</span>
+      </div>
+      <div class="exp-row">
+        <div class="exp-bg"><div class="exp-fill" id="exp-fill" style="width:0%"></div></div>
+        <span class="exp-num" id="exp-num">0/20</span>
+      </div>
+    </div>
+    <div class="hud-hp"><div class="hp-lab">HP</div><div class="hearts" id="hearts"></div></div>
+  </div>
+
+  <div id="game-area" style="display:none">
+    <div id="iso-wrap">
+      <canvas id="iso"></canvas>
+      <div id="lvup-banner"><div class="lvup-h">LEVEL UP!</div><div class="lvup-sub" id="lvup-sub">Lv.2 到達</div></div>
+      <div id="toast"></div>
+      <div id="dungeon-menu">
+        <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:2px;margin-bottom:14px">⚔ メニュー</div>
+        <div style="width:100%;max-width:300px;margin-bottom:10px">
+          <div style="font-size:9px;color:var(--muted);margin-bottom:6px;letter-spacing:1px">🔮 呪い問題</div>
+          <div id="dmenu-curse-list"></div>
+          <div id="dmenu-curse-empty" style="font-size:11px;color:rgba(255,255,255,.2);text-align:center;padding:10px 0;display:none">呪い問題はありません ✨</div>
+        </div>
+        <div style="width:100%;max-width:300px;height:.5px;background:rgba(255,255,255,.08);margin:4px 0 12px"></div>
+        <div style="width:100%;max-width:300px;display:flex;flex-direction:column;gap:6px">
+          <button id="dmenu-status" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.12);border-radius:9px;color:rgba(255,255,255,.7);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;text-align:left">📊 ステータス確認</button>
+          <button id="dmenu-close" style="width:100%;padding:10px;background:transparent;border:.5px solid rgba(255,255,255,.1);border-radius:9px;color:rgba(255,255,255,.35);font-size:12px;font-family:inherit;cursor:pointer">✕ 閉じる</button>
+        </div>
+      </div>
+      <div id="status-popup">
+        <div style="width:100%;max-width:300px">
+          <div style="font-size:13px;font-weight:700;color:rgba(255,255,255,.45);letter-spacing:2px;margin-bottom:12px;text-align:center">📊 ステータス</div>
+          <div id="status-content" class="stat-box" style="max-width:100%"></div>
+          <button id="status-close" style="width:100%;padding:10px;background:var(--blue);border-radius:9px;color:white;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer">✕ 閉じる</button>
+        </div>
+      </div>
+    </div>
+    <div id="bov" class="hidden"><div class="bov-in" id="bov-in"></div></div>
+    <div id="dpad">
+      <div class="dspc"></div><button class="dbtn" id="bu">↑</button><div class="dspc"></div>
+      <button class="dbtn" id="bl">←</button>
+      <button class="dctr" id="dctr">⚔<span id="curse-dot" style="display:none;position:absolute;top:1px;right:1px;width:8px;height:8px;border-radius:50%;background:#E24B4A;border:1.5px solid #0a0d14"></span></button>
+      <button class="dbtn" id="br">→</button>
+      <div class="dspc"></div><button class="dbtn" id="bd">↓</button><div class="dspc"></div>
+      <div class="dinfo" id="dinfo">矢印キー・WASDで移動</div>
+    </div>
+  </div>
+
+  <!-- TITLE -->
+  <div class="screen" id="scr-title">
+    <div class="t-glow"></div>
+    <div style="position:relative;z-index:1;width:100%">
+      <div style="font-size:44px;margin-bottom:7px">⚔️</div>
+      <div class="t-logo">DungeonStudy</div>
+      <div class="t-sub">解く。倒す。覚える。</div>
+      <div id="t-version" style="font-size:9px;color:rgba(255,255,255,.2);letter-spacing:1px;margin-top:-16px;margin-bottom:18px"></div>
+      <button class="big-btn" id="btn-start">🗺 冒険を始める</button>
+      <div class="t-rules">▸ ダンジョンを探索して敵を倒せ<br>▸ 問題を解いてEXP獲得・Lv.9999まで成長<br>▸ 不正解は呪い問題に記録→後でHP回復<br>▸ 雑魚を全滅させるとボスが出現</div>
+    </div>
+  </div>
+
+  <!-- AVATAR -->
+  <div class="screen hidden" id="scr-avatar">
+    <div style="font-size:28px;margin-bottom:5px">🎭</div>
+    <div style="font-size:15px;font-weight:800;margin-bottom:2px">冒険者を選べ</div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:10px">アバターと名前を設定</div>
+    <div class="av-grid" id="av-grid"></div>
+    <input class="name-inp" id="name-inp" maxlength="12" placeholder="名前（最大12文字）" value="冒険者">
+    <button class="big-btn" id="btn-av-ok">✅ 決定して冒険へ</button>
+  </div>
+
+  <!-- DUNGEON SELECT -->
+  <div class="screen hidden" id="scr-select">
+    <div class="page">
+      <div class="pg-h">ダンジョン選択</div>
+      <div class="pg-sub">探索するダンジョンを選べ</div>
+      <div id="d-list"></div>
+      <div id="curse-bar" style="display:none;background:rgba(226,75,74,.1);border:.5px solid rgba(226,75,74,.3);border-radius:10px;padding:9px 12px;margin-bottom:8px;align-items:center;gap:8px">
+        <span style="font-size:16px">🔮</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:700;color:#E24B4A">呪い問題あり</div>
+          <div style="font-size:9px;color:var(--muted)" id="curse-bar-sub"></div>
+        </div>
+        <button id="btn-curse-challenge" style="background:rgba(226,75,74,.55);border:.5px solid #E24B4A;border-radius:7px;padding:5px 10px;color:white;font-size:10px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap">今すぐ挑戦</button>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:4px">
+        <button class="big-btn" id="btn-zukan" style="flex:1;margin-bottom:0;background:rgba(155,89,182,.6)">📖 図鑑</button>
+        <button id="btn-admin" style="flex:1;padding:12px;background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.15);border-radius:10px;color:rgba(255,255,255,.7);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">⚙️ 管理</button>
+      </div>
+      <button class="ghost-btn" id="btn-chav" style="width:100%;margin-top:6px">🎭 アバターを変更</button>
+    </div>
+  </div>
+
+  <!-- ZUKAN -->
+  <div class="screen hidden" id="scr-zukan">
+    <div class="page">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+        <div class="pg-h" style="margin:0">📖 討伐図鑑</div>
+        <div id="zk-count-badge" style="font-size:10px;color:var(--muted)"></div>
+      </div>
+      <div class="pg-sub">倒した敵の記憶定着度</div>
+      <div class="zukan-grid" id="zukan-grid"></div>
+      <button class="ghost-btn" id="btn-zukan-back" style="width:100%;margin-top:14px">← 戻る</button>
+    </div>
+  </div>
+
+  <!-- ADMIN LIST -->
+  <div class="screen hidden" id="scr-admin">
+    <div class="page">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 4px">
+        <div class="pg-h" style="margin:0">⚙️ ダンジョン管理</div>
+        <button id="btn-admin-prompt" style="background:rgba(155,89,182,.5);border:.5px solid var(--purple);border-radius:7px;padding:5px 10px;color:white;font-size:10px;font-weight:700;font-family:inherit;cursor:pointer">🤖 AIプロンプト</button>
+      </div>
+      <div class="pg-sub">ダンジョンの追加・編集・削除</div>
+      <button id="btn-admin-add" style="width:100%;padding:11px;background:rgba(0,128,158,.6);border:.5px solid var(--blue);border-radius:10px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:12px">＋ 新規ダンジョンを追加</button>
+      <div id="admin-dungeon-list"></div>
+      <button class="ghost-btn" id="btn-admin-back" style="width:100%;margin-top:8px">← 戻る</button>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRM MODAL -->
+  <div id="del-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px">
+    <div style="background:#141820;border:1px solid rgba(226,75,74,.5);border-radius:14px;padding:20px 18px;width:100%;max-width:300px;text-align:center">
+      <div style="font-size:24px;margin-bottom:8px">🗑️</div>
+      <div style="font-size:14px;font-weight:700;color:white;margin-bottom:6px">ダンジョンを削除</div>
+      <div id="del-modal-name" style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:16px"></div>
+      <div style="display:flex;gap:8px">
+        <button id="del-cancel" style="flex:1;padding:11px;background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.15);border-radius:9px;color:rgba(255,255,255,.6);font-size:13px;font-family:inherit;cursor:pointer">キャンセル</button>
+        <button id="del-ok" style="flex:1;padding:11px;background:rgba(226,75,74,.7);border:.5px solid #E24B4A;border-radius:9px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN ADD -->
+  <div class="screen hidden" id="scr-admin-add">
+    <div class="page">
+      <div class="pg-h">＋ ダンジョンを追加</div>
+      <div class="pg-sub">AIが生成したJSONを貼り付けてインポート</div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:5px">JSONを貼り付け</div>
+      <textarea id="admin-json-input" class="adm-ta" style="height:200px" placeholder='{"name":"ダンジョン名","subject":"科目","icon":"🔥","color":"#E24B4A","questions":[...]}'></textarea>
+      <div id="admin-import-err" class="adm-err"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="btn-admin-import-ok" style="flex:2;padding:12px;background:var(--blue);border-radius:9px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">✅ インポート</button>
+        <button id="btn-admin-add-back" style="flex:1;padding:12px;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.12);border-radius:9px;color:rgba(255,255,255,.5);font-size:12px;font-family:inherit;cursor:pointer">キャンセル</button>
+      </div>
+      <div style="margin-top:14px;background:rgba(255,255,255,.03);border:.5px solid rgba(255,255,255,.08);border-radius:10px;padding:10px 12px">
+        <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:6px">📋 フォーマット例</div>
+        <pre style="font-size:9px;color:rgba(255,255,255,.35);line-height:1.7;white-space:pre-wrap;word-break:break-all">{"name":"ダンジョン名","subject":"数学","icon":"⚗️","color":"#00809E","questions":[{"difficulty":1,"monster_name":"ゴブリン","question":"問題文","choices":["A","B","C","D"],"answer":"A","explanation":"解説"},{"difficulty":4,"type":"boss","monster_name":"ドラゴン","question":"ボス問題（記述式）","answer":"正解","explanation":"解説"}]}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN EDIT -->
+  <div class="screen hidden" id="scr-admin-edit">
+    <div class="page">
+      <div class="pg-h">✏️ ダンジョン編集</div>
+      <div class="pg-sub" id="edit-dungeon-sub"></div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">ダンジョン名</div>
+      <input id="edit-name" class="adm-inp" style="margin-bottom:10px" placeholder="ダンジョン名">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px">科目</div><input id="edit-subject" class="adm-inp" placeholder="数学"></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px">アイコン</div><input id="edit-icon" class="adm-inp" style="text-align:center;font-size:16px" placeholder="⚗️" maxlength="4"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">テーマカラー</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+        <input type="color" id="edit-color" style="width:44px;height:34px;border:none;border-radius:6px;cursor:pointer;background:transparent">
+        <div id="color-presets" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">問題データ（questions配列）</div>
+      <textarea id="edit-json" class="adm-ta" style="height:180px"></textarea>
+      <div id="edit-err" class="adm-err"></div>
+      <div style="font-size:9px;color:rgba(255,255,255,.2);margin:4px 0 10px">※ questionsの配列のみ編集</div>
+      <div style="display:flex;gap:8px">
+        <button id="btn-edit-save" style="flex:2;padding:12px;background:var(--blue);border-radius:9px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">💾 保存</button>
+        <button id="btn-edit-back" style="flex:1;padding:12px;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.12);border-radius:9px;color:rgba(255,255,255,.5);font-size:12px;font-family:inherit;cursor:pointer">キャンセル</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN PROMPT -->
+  <div class="screen hidden" id="scr-admin-prompt">
+    <div class="page">
+      <div class="pg-h">🤖 AIプロンプト生成</div>
+      <div class="pg-sub">AIに問題を作ってもらうプロンプトを生成</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px">科目・テーマ</div><input id="prompt-subject" class="adm-inp" placeholder="例: 中学数学 二次方程式"></div>
+        <div><div style="font-size:10px;color:var(--muted);margin-bottom:4px">問題数</div>
+          <select id="prompt-count" class="adm-inp"><option value="3">3問+ボス1</option><option value="5" selected>5問+ボス1</option><option value="8">8問+ボス1</option><option value="10">10問+ボス1</option></select>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:4px">難易度レベル</div>
+      <select id="prompt-level" class="adm-inp" style="margin-bottom:12px"><option value="中学生">中学生</option><option value="高校生" selected>高校生</option><option value="大学受験">大学受験</option><option value="大学生">大学生</option></select>
+      <button id="btn-gen-prompt" style="width:100%;padding:11px;background:rgba(155,89,182,.6);border:.5px solid var(--purple);border-radius:9px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:10px">✨ プロンプトを生成</button>
+      <div id="prompt-output-wrap" style="display:none">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">生成されたプロンプト</div>
+        <textarea id="prompt-output" readonly class="adm-ta" style="height:200px;resize:none"></textarea>
+        <button id="btn-copy-prompt" style="width:100%;padding:11px;background:rgba(0,200,150,.5);border:.5px solid var(--green);border-radius:9px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:6px">📋 コピー</button>
+      </div>
+      <button class="ghost-btn" id="btn-prompt-back" style="width:100%;margin-top:8px">← 戻る</button>
+    </div>
+  </div>
+
+  <!-- CLEAR -->
+  <div class="end hidden" id="scr-clear">
+    <div class="end-icon">🏆</div>
+    <div class="end-h" style="color:var(--gold)">ダンジョンクリア！</div>
+    <div class="end-sub" id="clr-sub"></div>
+    <svg id="clr-av" viewBox="0 0 60 80" width="52" height="70" style="margin-bottom:10px"></svg>
+    <div class="stat-box" id="clr-stats"></div>
+    <div class="log-box" id="clr-log"></div>
+    <button class="big-btn" id="btn-clr-next">🗺 別のダンジョンへ</button>
+    <button class="ghost-btn" id="btn-clr-ttl">🏠 タイトルへ</button>
+  </div>
+
+  <!-- GAMEOVER -->
+  <div class="end hidden" id="scr-go">
+    <div class="end-icon">💀</div>
+    <div class="end-h" style="color:var(--red)">GAME OVER</div>
+    <div class="end-sub">HPが尽きた…</div>
+    <div class="stat-box" id="go-stats"></div>
+    <button class="big-btn" id="btn-retry">🔄 半分EXPで再挑戦</button>
+    <button class="ghost-btn" id="btn-go-ttl">🏠 タイトルへ</button>
+  </div>
+</div>
+
+<script>
+
+// ════════════════════════════════════════════════
+//  CONFIG & DATA
+// ════════════════════════════════════════════════
+const EXP_LV_BASE = 20;
+function expNeeded(lv){ return lv<=1 ? EXP_LV_BASE : Math.floor(15*Math.log(lv+1)+10); }
+function expForLevel(lv){ let s=0; for(let i=1;i<lv;i++) s+=expNeeded(i); return s; }
+const TITLES=[[1,"見習い冒険者"],[5,"冒険者"],[10,"熟練冒険者"],[20,"勇者"],[30,"猛者"],[50,"英雄"],[75,"伝説の戦士"],[100,"覇者"],[200,"不滅の英雄"],[500,"宇宙の守護者"],[1000,"時の支配者"],[9999,"全知の存在"]];
+function titleFor(lv){ let t=TITLES[0]; for(const [l,n] of TITLES){ if(lv>=l) t=[l,n]; } return t[1]; }
+const MSIZE=9;
+const APP_VERSION="1.0.0";
+const LS_KEY="dungeon_study_dungeons_v4";
+const COLOR_PRESETS=["#00809E","#EA8712","#9B59B6","#E24B4A","#27AE60","#2980B9","#C0392B","#8E44AD","#16A085","#D35400"];
+const AVATARS=[
+  {key:"warrior",label:"戦士",   c:{skin:"#f4c07a",hair:"#3a2010",body:"#00809E",trim:"#EA8712"}},
+  {key:"mage",   label:"魔法使い",c:{skin:"#f4c07a",hair:"#1a1a60",body:"#6B4CA0",trim:"#00C8FF"}},
+  {key:"archer", label:"弓使い", c:{skin:"#e8a87c",hair:"#8B4513",body:"#2d7a3a",trim:"#a0d060"}},
+  {key:"knight", label:"騎士",   c:{skin:"#f4c07a",hair:"#222",   body:"#445",   trim:"#FFD700"}},
+  {key:"fox",    label:"フォックス",c:{skin:"#f4a060",hair:"#cc4400",body:"#8B3A1A",trim:"#FFD700"}},
+  {key:"wolf",   label:"ウルフ", c:{skin:"#c8c8d8",hair:"#444",   body:"#334",   trim:"#88aaff"}},
+  {key:"dragon", label:"竜騎士", c:{skin:"#f4c07a",hair:"#220022",body:"#800020",trim:"#FF4400"}},
+  {key:"fairy",  label:"妖精",   c:{skin:"#ffd0e0",hair:"#ff88cc",body:"#cc44aa",trim:"#ffccff"}},
+];
+const DEFAULT_DUNGEONS=[
+
+  // ══════════════════════════════
+  //  理科（中3）
+  // ══════════════════════════════
+  {id:"sci_ion",name:"イオンの洞窟",subject:"理科",icon:"⚗️",color:"#9B59B6",enemies:[
+    {id:"si1",name:"陽イオンスライム",tier:0,exp:20,difficulty:1,q:"原子が電子を失ってできるイオンを何という？",ans:"陽イオン",choices:["陽イオン","陰イオン","中性原子","分子"],hint:"プラスに帯電したイオン",explanation:"電子を失うと正電荷が多くなるため陽イオンという。例：Na⁺、Ca²⁺。"},
+    {id:"si2",name:"電解質ゴブリン",tier:0,exp:20,difficulty:1,q:"水に溶かすと電流が流れる物質を何という？",ans:"電解質",choices:["電解質","非電解質","溶質","溶媒"],hint:"電流を流す性質をもつ",explanation:"電解質は水中でイオンに分かれ（電離）、電流を流す。食塩・塩酸などが例。"},
+    {id:"si3",name:"酸のオーク",tier:1,exp:28,difficulty:2,q:"塩酸（HCl）が水中で電離して生じるイオンを２つ答えよ",ans:"H⁺とCl⁻",choices:["H⁺とCl⁻","Na⁺とOH⁻","H⁺とOH⁻","Cl⁻とOH⁻"],hint:"HClはH+と…",explanation:"HCl → H⁺ + Cl⁻。H⁺が酸性の原因、Cl⁻は塩化物イオン。"},
+    {id:"si4",name:"中和の魔術師",tier:1,exp:28,difficulty:2,q:"酸とアルカリが反応して水と塩ができる反応を何という？",ans:"中和",choices:["中和","電気分解","酸化","還元"],hint:"酸＋アルカリ→…",explanation:"中和：H⁺ + OH⁻ → H₂O。同時に塩（えん）が生成する。"},
+    {id:"si5",name:"電気分解トロール",tier:2,exp:38,difficulty:3,q:"塩化銅水溶液を電気分解したとき、陰極に付着するものは？",ans:"銅",choices:["銅","塩素","水素","酸素"],hint:"金属が析出する側",explanation:"陰極では Cu²⁺ が電子を受け取り銅として析出。陽極では Cl⁻ が電子を放出し塩素ガスが発生。"},
+    {id:"si6",name:"pHドラゴン",tier:2,exp:38,difficulty:3,q:"BTB溶液が黄色を示すとき、水溶液は酸性・中性・アルカリ性のどれ？",ans:"酸性",choices:["酸性","中性","アルカリ性","強アルカリ性"],hint:"BTB：酸性→黄、中性→緑",explanation:"BTB（ブロモチモールブルー）：酸性→黄、中性→緑、アルカリ性→青。"},
+    {id:"si_boss",name:"イオン大魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"水酸化ナトリウム水溶液に塩酸を加えたときの化学反応式を書け（イオン式でなくてよい）",ans:"NaOH+HCl→NaCl+H₂O",hint:"中和反応。生成物は塩と水",explanation:"NaOH + HCl → NaCl + H₂O。中和によって食塩（塩化ナトリウム）と水が生じる。"},
+  ]},
+
+  {id:"sci_gene",name:"遺伝の森",subject:"理科",icon:"🧬",color:"#9B59B6",enemies:[
+    {id:"sg1",name:"細胞分裂スライム",tier:0,exp:20,difficulty:1,q:"体細胞分裂のとき、染色体数はどうなる？",ans:"変わらない",choices:["変わらない","半分になる","2倍になる","4倍になる"],hint:"親と同じ数を維持",explanation:"体細胞分裂では染色体が複製されてから等分されるため、細胞数は2倍になるが1個あたりの染色体数は変わらない。"},
+    {id:"sg2",name:"減数分裂ゴブリン",tier:0,exp:20,difficulty:1,q:"生殖細胞（精子・卵）をつくる分裂を何という？",ans:"減数分裂",choices:["減数分裂","体細胞分裂","核分裂","無性生殖"],hint:"染色体数が半分になる",explanation:"減数分裂では染色体数が半分（n）になる。受精すると元の数（2n）に戻る。"},
+    {id:"sg3",name:"優性形質オーク",tier:1,exp:28,difficulty:2,q:"純系の丸い種子（AA）と純系のしわの種子（aa）を交配したF1の表現型は？",ans:"丸",choices:["丸","しわ","丸としわの混合","どちらでもない"],hint:"優性の法則",explanation:"Aa になり、A（丸）が優性なので全てが丸になる（優性の法則）。"},
+    {id:"sg4",name:"分離の法則オーク",tier:1,exp:28,difficulty:2,q:"Aa×Aa の交配でしわ（aa）になる確率は？",ans:"25%",choices:["25%","50%","75%","100%"],hint:"AA:Aa:aa = 1:2:1",explanation:"AA:Aa:aa = 1:2:1。aa は4分の1なので25%。"},
+    {id:"sg5",name:"DNA魔術師",tier:2,exp:38,difficulty:3,q:"遺伝子の本体となる物質を何という？",ans:"DNA",choices:["DNA","RNA","タンパク質","ATP"],hint:"デオキシリボ核酸",explanation:"DNA（デオキシリボ核酸）が遺伝情報を担う。塩基の配列が遺伝子。"},
+    {id:"sg6",name:"形質遺伝トロール",tier:2,exp:38,difficulty:3,q:"親の形質が子に伝わる現象を何という？",ans:"遺伝",choices:["遺伝","進化","変異","適応"],hint:"世代を超えて引き継がれる",explanation:"遺伝は親から子へ遺伝子（DNA）を通じて形質が伝わること。"},
+    {id:"sg_boss",name:"遺伝の賢者",tier:2,exp:50,difficulty:4,isBoss:true,q:"メンデルが発見した遺伝の法則を2つ答えよ",ans:"優性の法則と分離の法則",hint:"F1とF2で見えたルール",explanation:"①優性の法則：F1では優性形質のみ現れる。②分離の法則：F2では優性:劣性＝3:1に分離する。独立の法則を含めて3法則ともいう。"},
+  ]},
+
+  {id:"sci_earth",name:"地球の神殿",subject:"理科",icon:"🌍",color:"#9B59B6",enemies:[
+    {id:"se1",name:"天体スライム",tier:0,exp:20,difficulty:1,q:"地球が自転している向きは？（北極側から見て）",ans:"西から東",choices:["西から東","東から西","南から北","北から南"],hint:"太陽が東から昇る理由",explanation:"地球は北極側から見て反時計回り（西→東）に自転。だから太陽は東から昇る。"},
+    {id:"se2",name:"月面ゴブリン",tier:0,exp:20,difficulty:1,q:"月が満月から次の満月になるまでの周期はおよそ何日？",ans:"約30日",choices:["約7日","約15日","約30日","約365日"],hint:"一ヶ月≒月の周期",explanation:"月の公転周期は約27.3日だが、地球も公転するため次の満月まで約29.5日（約30日）。"},
+    {id:"se3",name:"日食オーク",tier:1,exp:28,difficulty:2,q:"日食が起こるのは月が何の位置にあるときか？",ans:"新月",choices:["新月","満月","上弦の月","下弦の月"],hint:"太陽・月・地球の順に一直線",explanation:"新月のとき月が太陽と地球の間に入り、太陽が隠れる（日食）。月食は満月のとき。"},
+    {id:"se4",name:"プレートトロール",tier:1,exp:28,difficulty:2,q:"地球の表面を覆う十数枚の岩盤を何という？",ans:"プレート",choices:["プレート","地殻","マントル","コア"],hint:"大陸移動の原因",explanation:"プレートはマントルの対流に乗って動き、地震・火山・山脈の形成を引き起こす。"},
+    {id:"se5",name:"震源魔術師",tier:2,exp:38,difficulty:3,q:"地震の揺れが最初に発生した地下の点を何という？",ans:"震源",choices:["震源","震央","震度","マグニチュード"],hint:"地下の揺れの起点",explanation:"震源は地下の起点。その真上の地表が震央。震度は各地の揺れの強さ、マグニチュードは地震エネルギーの大きさ。"},
+    {id:"se6",name:"火山灰のオーガ",tier:2,exp:38,difficulty:3,q:"マグマが地表に噴出したものを何という？",ans:"溶岩",choices:["溶岩","火山灰","火山弾","マグマ"],hint:"地表に出ると名前が変わる",explanation:"地下にあるときはマグマ、地表に噴出すると溶岩。火山灰・火山弾も同じ噴出物。"},
+    {id:"se_boss",name:"地球の神",tier:2,exp:50,difficulty:4,isBoss:true,q:"日本付近でプレートが沈み込む場所にできる細長い深い地形を何というか",ans:"海溝",hint:"日本海溝が有名",explanation:"プレートが沈み込む境界に海溝（かいこう）ができる。日本海溝・マリアナ海溝が代表例。"},
+  ]},
+
+  {id:"sci_energy",name:"エネルギーの塔",subject:"理科",icon:"⚡",color:"#9B59B6",enemies:[
+    {id:"sen1",name:"速度スライム",tier:0,exp:20,difficulty:1,q:"速さの単位 m/s は何と読む？",ans:"メートル毎秒",choices:["メートル毎秒","メートル毎分","キロ毎秒","センチ毎秒"],hint:"距離÷時間の単位",explanation:"m/s はメートル毎秒。1秒間に何メートル進むかを示す速さの単位。"},
+    {id:"sen2",name:"慣性ゴブリン",tier:0,exp:20,difficulty:1,q:"外から力が加わらない限り、止まっている物体は止まり続ける法則を何という？",ans:"慣性の法則",choices:["慣性の法則","作用反作用の法則","万有引力の法則","フックの法則"],hint:"ニュートンの第一法則",explanation:"慣性の法則（ニュートン第一法則）。慣性とは「現在の運動状態を維持しようとする性質」。"},
+    {id:"sen3",name:"仕事オーク",tier:1,exp:28,difficulty:2,q:"力の大きさ10N で物体を2m 動かしたとき、仕事の大きさは？",ans:"20J",choices:["20J","5J","12J","8J"],hint:"仕事(J)＝力(N)×距離(m)",explanation:"仕事 W = F × d = 10 × 2 = 20J。力の向きに動いた距離との積。"},
+    {id:"sen4",name:"位置エネルギートロール",tier:1,exp:28,difficulty:2,q:"高いところにある物体がもつエネルギーを何という？",ans:"位置エネルギー",choices:["位置エネルギー","運動エネルギー","熱エネルギー","化学エネルギー"],hint:"高さに関係するエネルギー",explanation:"位置エネルギーは高さと質量に比例する。斜面を下るとき位置エネルギーが運動エネルギーに変換される。"},
+    {id:"sen5",name:"力学的エネルギー魔術師",tier:2,exp:38,difficulty:3,q:"摩擦や空気抵抗がないとき、位置エネルギーと運動エネルギーの和は一定である。この法則を何という？",ans:"力学的エネルギー保存の法則",choices:["力学的エネルギー保存の法則","エネルギー変換の法則","熱力学の法則","仕事の原理"],hint:"和が一定",explanation:"力学的エネルギー（位置エネルギー＋運動エネルギー）は摩擦なしなら保存される。"},
+    {id:"sen6",name:"熱量のオーガ",tier:2,exp:38,difficulty:3,q:"エネルギーは形が変わっても総量は変わらない。この法則を何という？",ans:"エネルギー保存の法則",choices:["エネルギー保存の法則","慣性の法則","質量保存の法則","倍数比例の法則"],hint:"エネルギーは消えない",explanation:"エネルギー保存の法則：電気→熱、運動→電気などに変換されても総量は変わらない。"},
+    {id:"sen_boss",name:"エネルギーの神",tier:2,exp:50,difficulty:4,isBoss:true,q:"質量2kgの物体を5m/sで動かしているとき、運動エネルギーは何Jか（計算式も示せ）",ans:"25J（½×2×5²＝25J）",hint:"運動エネルギー＝½mv²",explanation:"Ek = ½mv² = ½×2×25 = 25J。vは速さ、mは質量。"},
+  ]},
+
+  // ══════════════════════════════
+  //  数学（中3）
+  // ══════════════════════════════
+  {id:"math_sq",name:"平方根の洞窟",subject:"数学",icon:"√",color:"#00809E",enemies:[
+    {id:"mq1",name:"根号スライム",tier:0,exp:20,difficulty:1,q:"√9 の値は？",ans:"3",choices:["3","4","9","6"],hint:"3×3=9",explanation:"√9 = 3。二乗して9になる正の数が3。"},
+    {id:"mq2",name:"有理化ゴブリン",tier:0,exp:20,difficulty:1,q:"√2 はおよそいくつ？",ans:"約1.41",choices:["約1.41","約1.73","約2.24","約1.00"],hint:"1.4142…と覚えよう",explanation:"√2 ≈ 1.4142…。「一夜一夜に人見頃」と語呂合わせで覚える。"},
+    {id:"mq3",name:"根号計算オーク",tier:1,exp:28,difficulty:2,q:"√3 × √3 の値は？",ans:"3",choices:["3","√6","√9","9"],hint:"√a × √a = ?",explanation:"√3 × √3 = (√3)² = 3。ルートと二乗が打ち消し合う。"},
+    {id:"mq4",name:"有理数のトロール",tier:1,exp:28,difficulty:2,q:"√8 を最も簡単な形に直すと？",ans:"2√2",choices:["2√2","4√2","√4×2","8"],hint:"8 = 4×2",explanation:"√8 = √(4×2) = 2√2。4が完全平方数なので外に出せる。"},
+    {id:"mq5",name:"根号整理の魔術師",tier:2,exp:38,difficulty:3,q:"(√5 + √2)(√5 − √2) の値は？",ans:"3",choices:["3","7","√3","10"],hint:"(a+b)(a-b)=a²-b²",explanation:"(√5)²−(√2)² = 5−2 = 3。和と差の積の公式を使う。"},
+    {id:"mq6",name:"無理数のオーガ",tier:2,exp:38,difficulty:3,q:"次のうち無理数はどれ？",ans:"√2",choices:["√2","√4","0.5","3/7"],hint:"分数で表せないもの",explanation:"√2は分数で表せない無理数。√4=2、0.5=1/2、3/7はいずれも有理数。"},
+    {id:"mq_boss",name:"根号の魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"√12 + √75 − √27 を計算せよ",ans:"4√3",hint:"各項を簡単にしてから計算",explanation:"√12=2√3、√75=5√3、√27=3√3。2√3+5√3−3√3=4√3。"},
+  ]},
+
+  {id:"math_quad",name:"二次方程式の迷宮",subject:"数学",icon:"²",color:"#00809E",enemies:[
+    {id:"mqu1",name:"因数分解スライム",tier:0,exp:20,difficulty:1,q:"x² − 5x + 6 = 0 の解は？",ans:"x=2, x=3",choices:["x=2, x=3","x=−2, x=−3","x=1, x=6","x=−1, x=6"],hint:"(x−2)(x−3)=0",explanation:"因数分解すると (x−2)(x−3)=0。x=2 または x=3。"},
+    {id:"mqu2",name:"平方完成ゴブリン",tier:0,exp:20,difficulty:1,q:"x² = 16 の解は？",ans:"x=±4",choices:["x=±4","x=4","x=±8","x=±2"],hint:"正と負の両方",explanation:"x² = 16 → x = ±√16 = ±4。正負どちらも解になることに注意。"},
+    {id:"mqu3",name:"解の公式オーク",tier:1,exp:28,difficulty:2,q:"二次方程式の解の公式で使う「判別式」は何か？",ans:"b²−4ac",choices:["b²−4ac","b²+4ac","−b±√","2a"],hint:"D = b²-4ac",explanation:"判別式 D = b²−4ac。D>0なら2つの実数解、D=0なら重解、D<0なら実数解なし。"},
+    {id:"mqu4",name:"重解のトロール",tier:1,exp:28,difficulty:2,q:"x² − 6x + 9 = 0 の解は？",ans:"x=3（重解）",choices:["x=3（重解）","x=3, x=−3","x=±3","x=1, x=9"],hint:"(x−3)²=0",explanation:"(x−3)² = 0 → x=3（重解）。判別式 D = 36−36 = 0。"},
+    {id:"mqu5",name:"文章題の魔術師",tier:2,exp:38,difficulty:3,q:"連続する2つの正の整数の積が30のとき、小さい方の整数は？",ans:"5",choices:["5","6","4","3"],hint:"n(n+1)=30",explanation:"n(n+1) = 30 → n²+n−30 = 0 → (n+6)(n−5) = 0。n>0なのでn=5。"},
+    {id:"mqu6",name:"面積のオーガ",tier:2,exp:38,difficulty:3,q:"x² − x − 6 = 0 の解は？",ans:"x=3, x=−2",choices:["x=3, x=−2","x=−3, x=2","x=3, x=2","x=−3, x=−2"],hint:"(x−3)(x+2)=0",explanation:"因数分解：(x−3)(x+2) = 0。x=3 または x=−2。"},
+    {id:"mqu_boss",name:"二次の魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"解の公式を使って 2x²+ 3x − 2 = 0 を解け",ans:"x=1/2, x=−2",hint:"x = (−b±√(b²−4ac))/(2a)",explanation:"a=2, b=3, c=−2。D = 9+16 = 25。x = (−3±5)/4。x=1/2 または x=−2。"},
+  ]},
+
+  {id:"math_func",name:"関数の神殿",subject:"数学",icon:"📈",color:"#00809E",enemies:[
+    {id:"mf1",name:"比例スライム",tier:0,exp:20,difficulty:1,q:"y = 2x のとき、x = 3 のとき y は？",ans:"6",choices:["6","5","8","3"],hint:"代入するだけ",explanation:"y = 2×3 = 6。比例のグラフは原点を通る直線。"},
+    {id:"mf2",name:"一次関数ゴブリン",tier:0,exp:20,difficulty:1,q:"y = 3x + 1 の傾きは？",ans:"3",choices:["3","1","3x","−1"],hint:"y = ax + b の a が傾き",explanation:"y = ax+b で a が傾き（変化率）、b が y 切片。この式では傾き=3、y切片=1。"},
+    {id:"mf3",name:"変化の割合オーク",tier:1,exp:28,difficulty:2,q:"y = x² で x が1から3に変わるとき、変化の割合は？",ans:"4",choices:["4","2","8","6"],hint:"(y₂−y₁)÷(x₂−x₁)",explanation:"x=1のとき y=1、x=3のとき y=9。変化の割合 = (9−1)÷(3−1) = 8÷2 = 4。"},
+    {id:"mf4",name:"二次関数のトロール",tier:1,exp:28,difficulty:2,q:"y = x² のグラフを何という？",ans:"放物線",choices:["放物線","双曲線","楕円","直線"],hint:"U字型のカーブ",explanation:"y = ax² のグラフは放物線（parabola）。a>0なら下に凸、a<0なら上に凸。"},
+    {id:"mf5",name:"頂点の魔術師",tier:2,exp:38,difficulty:3,q:"y = x² − 4 の頂点の座標は？",ans:"(0, −4)",choices:["(0, −4)","(4, 0)","(0, 4)","(−4, 0)"],hint:"y = x²をy軸方向に平行移動",explanation:"y = x² − 4 は y = x² を y 軸方向に −4 移動。頂点は (0, −4)。"},
+    {id:"mf6",name:"グラフのオーガ",tier:2,exp:38,difficulty:3,q:"y = −2x² で x = 3 のとき y は？",ans:"−18",choices:["−18","18","−12","12"],hint:"x=3を代入",explanation:"y = −2×9 = −18。係数が負なので上に凸の放物線。"},
+    {id:"mf_boss",name:"関数の魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"y = 2x²（x の変域：−1≦x≦3）のとき、y の最大値と最小値を答えよ",ans:"最大値18、最小値0",hint:"x=3のとき最大、x=0のとき最小",explanation:"x=3で y=18（最大）、x=0で y=0（最小）。x=−1では y=2。グラフは x=0 が頂点。"},
+  ]},
+
+  {id:"math_shape",name:"図形の城",subject:"数学",icon:"📐",color:"#00809E",enemies:[
+    {id:"ms1",name:"相似スライム",tier:0,exp:20,difficulty:1,q:"三角形の相似条件は何つある？",ans:"3つ",choices:["3つ","2つ","4つ","5つ"],hint:"3辺・2辺1角・2角",explanation:"①3組の辺の比、②2組の辺の比と挟まれた角、③2組の角がそれぞれ等しい。の3条件。"},
+    {id:"ms2",name:"平行線ゴブリン",tier:0,exp:20,difficulty:1,q:"円周角の定理：1つの弧に対する円周角は中心角の何倍？",ans:"1/2",choices:["1/2","2倍","等しい","3倍"],hint:"中心角の半分",explanation:"円周角 = 中心角 ÷ 2。同じ弧に対する円周角は等しい。"},
+    {id:"ms3",name:"相似比オーク",tier:1,exp:28,difficulty:2,q:"相似比が2:3の2つの三角形の面積比は？",ans:"4:9",choices:["4:9","2:3","8:27","1:2"],hint:"面積比は相似比の2乗",explanation:"面積比 = (相似比)² = 2²:3² = 4:9。体積比は(相似比)³。"},
+    {id:"ms4",name:"三平方のトロール",tier:1,exp:28,difficulty:2,q:"直角三角形で直角を挟む2辺が3cmと4cmのとき、斜辺は？",ans:"5cm",choices:["5cm","6cm","7cm","√7cm"],hint:"ピタゴラスの定理",explanation:"3² + 4² = 9+16 = 25 = 5²。3・4・5はピタゴラス数として有名。"},
+    {id:"ms5",name:"体積の魔術師",tier:2,exp:38,difficulty:3,q:"半径3cmの球の体積は？（π使用）",ans:"36πcm³",choices:["36πcm³","12πcm³","108πcm³","4πcm³"],hint:"V = (4/3)πr³",explanation:"V = (4/3)π×3³ = (4/3)×27π = 36π cm³。"},
+    {id:"ms6",name:"円のオーガ",tier:2,exp:38,difficulty:3,q:"半径5cmの円の面積は？（π使用）",ans:"25πcm²",choices:["25πcm²","10πcm²","50πcm²","5πcm²"],hint:"S = πr²",explanation:"S = π×5² = 25π cm²。円周は 2πr = 10π cm。"},
+    {id:"ms_boss",name:"図形の魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"直角三角形の斜辺が10cm、他の一辺が6cmのとき、残りの辺の長さを求めよ（求め方も示せ）",ans:"8cm（10²−6²=64、√64=8）",hint:"三平方の定理",explanation:"10²−6² = 100−36 = 64。√64 = 8 cm。6・8・10はピタゴラス数の3・4・5の2倍。"},
+  ]},
+
+  // ══════════════════════════════
+  //  英語（中3）
+  // ══════════════════════════════
+  {id:"eng_vocab",name:"英単語の遺跡",subject:"英語",icon:"📜",color:"#EA8712",enemies:[
+    {id:"ev1",name:"名詞スライム",tier:0,exp:20,difficulty:1,q:"「環境」を英語で？",ans:"environment",choices:["environment","government","movement","entertainment"],hint:"environ（囲む）＋ment",explanation:"environment（環境）。environ- は「周囲・囲む」という意味の接頭辞。"},
+    {id:"ev2",name:"形容詞ゴブリン",tier:0,exp:20,difficulty:1,q:"「〜に同意する」を英語で？",ans:"agree",choices:["agree","disagree","allow","accept"],hint:"ag-＋ree",explanation:"agree with〜（〜に同意する）。反意語は disagree。"},
+    {id:"ev3",name:"動詞オーク",tier:1,exp:28,difficulty:2,q:"「〜を達成する」を英語で？",ans:"achieve",choices:["achieve","receive","believe","relieve"],hint:"ach-で始まる",explanation:"achieve（達成する）。achievement は名詞形「達成・業績」。"},
+    {id:"ev4",name:"副詞のトロール",tier:1,exp:28,difficulty:2,q:"「〜を表す」を英語で？",ans:"represent",choices:["represent","present","prevent","pretend"],hint:"re（再び）＋present",explanation:"represent（表す・代表する）。representative は「代表者・典型的な」。"},
+    {id:"ev5",name:"熟語の魔術師",tier:2,exp:38,difficulty:3,q:"「A を B と見なす」を英語で？",ans:"regard A as B",choices:["regard A as B","consider A as B","think A is B","see A with B"],hint:"regard〜as…",explanation:"regard A as B（AをBとみなす）。think of A as B も同じ意味で使える。"},
+    {id:"ev6",name:"語彙のオーガ",tier:2,exp:38,difficulty:3,q:"「〜に貢献する」を英語で？",ans:"contribute to",choices:["contribute to","distribute to","attribute to","institute to"],hint:"contrib＋ute",explanation:"contribute to〜（〜に貢献する・寄付する）。contribution は名詞形。"},
+    {id:"ev_boss",name:"語彙の魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"「私が最も大切にしているものは友情だ」を英語で書け",ans:"What I value most is friendship.",hint:"関係代名詞 what を使う",explanation:"What I value most（私が最も大切にするもの）が主語。What = the thing that。"},
+  ]},
+
+  {id:"eng_grammar",name:"文法の迷宮",subject:"英語",icon:"🔤",color:"#EA8712",enemies:[
+    {id:"eg1",name:"現在完了スライム",tier:0,exp:20,difficulty:1,q:"「私はすでに宿題をした」を英語で？",ans:"I have already done my homework.",choices:["I have already done my homework.","I already did my homework.","I do my homework already.","I had done my homework."],hint:"have＋過去分詞",explanation:"現在完了（完了）：have + 過去分詞。already（すでに）は have の直後か文末に置く。"},
+    {id:"eg2",name:"受動態ゴブリン",tier:0,exp:20,difficulty:1,q:"「この橋は100年前に建てられた」の受動態は？",ans:"This bridge was built 100 years ago.",choices:["This bridge was built 100 years ago.","This bridge built 100 years ago.","This bridge has built 100 years ago.","This bridge is built 100 years ago."],hint:"be動詞＋過去分詞",explanation:"受動態：be + 過去分詞。過去の文なので was built。"},
+    {id:"eg3",name:"不定詞オーク",tier:1,exp:28,difficulty:2,q:"「彼は医者になるために医学を勉強した」の不定詞の用法は？",ans:"副詞的用法（目的）",choices:["副詞的用法（目的）","名詞的用法","形容詞的用法","補語用法"],hint:"なぜ勉強したのか",explanation:"to become a doctor は「医者になるために（目的）」→ 副詞的用法。"},
+    {id:"eg4",name:"関係代名詞トロール",tier:1,exp:28,difficulty:2,q:"The boy ( ) is playing soccer is my brother. 括弧に入るものは？",ans:"who",choices:["who","which","whose","whom"],hint:"先行詞が人",explanation:"先行詞 The boy が人なので who（または that）。which は物・事。"},
+    {id:"eg5",name:"仮定法の魔術師",tier:2,exp:38,difficulty:3,q:"「もし私が鳥だったら、空を飛べるのに」の仮定法は？",ans:"If I were a bird, I could fly.",choices:["If I were a bird, I could fly.","If I am a bird, I can fly.","If I was a bird, I will fly.","If I were a bird, I will fly."],hint:"仮定法過去：were / could",explanation:"仮定法過去：If＋主語＋were（動詞の過去形）, 主語＋would/could＋動詞原形。"},
+    {id:"eg6",name:"間接疑問文のオーガ",tier:2,exp:38,difficulty:3,q:"「彼がどこに住んでいるか知っていますか」を英語で？",ans:"Do you know where he lives?",choices:["Do you know where he lives?","Do you know where does he live?","Do you know where he is living?","Do you know where did he live?"],hint:"間接疑問文は平叙文の語順",explanation:"間接疑問文は疑問詞の後が「主語＋動詞」の平叙文語順。where he lives（○）、where does he live（×）。"},
+    {id:"eg_boss",name:"文法の魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"「私が昨日会った少女はカナダ出身だ」を関係代名詞を使って英語で書け",ans:"The girl whom I met yesterday is from Canada.",hint:"先行詞「少女」が目的格",explanation:"The girl whom（=that）I met yesterday is from Canada. 目的格の関係代名詞は省略も可。"},
+  ]},
+
+  {id:"eng_reading",name:"長文読解の神殿",subject:"英語",icon:"📖",color:"#EA8712",enemies:[
+    {id:"er1",name:"接続詞スライム",tier:0,exp:20,difficulty:1,q:"「しかし」を表す接続詞は？",ans:"however",choices:["however","therefore","moreover","otherwise"],hint:"逆接",explanation:"however（しかし）は逆接。therefore（したがって）、moreover（さらに）、otherwise（さもなければ）。"},
+    {id:"er2",name:"前置詞ゴブリン",tier:0,exp:20,difficulty:1,q:"「〜によると」を表す前置詞句は？",ans:"according to",choices:["according to","due to","thanks to","instead of"],hint:"情報源を示す",explanation:"according to〜（〜によると）。due to（〜のために）、thanks to（〜のおかげで）。"},
+    {id:"er3",name:"指示語オーク",tier:1,exp:28,difficulty:2,q:"英文中の this / that / it は何を指す場合が多い？",ans:"直前の語句・文の内容",choices:["直前の語句・文の内容","直後の語句","主語","筆者の意見"],hint:"指示語は前を向く",explanation:"指示語は原則として直前の語句や文の内容を受ける。読解では必ず前の文を確認する。"},
+    {id:"er4",name:"主旨把握のトロール",tier:1,exp:28,difficulty:2,q:"英語の段落で筆者の主張が書かれることが多いのは？",ans:"最初の文（トピックセンテンス）",choices:["最初の文（トピックセンテンス）","最後の文","中間の文","全ての文"],hint:"topic sentence",explanation:"英語の段落構成では最初の文がトピックセンテンスとして主旨を述べ、後の文が根拠・例を示す。"},
+    {id:"er5",name:"比較表現の魔術師",tier:2,exp:38,difficulty:3,q:"「AはBの3倍の長さだ」を英語で？",ans:"A is three times as long as B.",choices:["A is three times as long as B.","A is three times longer than B.","A is three more long than B.","A is three times long than B."],hint:"〜倍＝数字＋times as…as",explanation:"倍数表現：数字＋times as 形容詞 as〜。「3倍長い」は three times as long as が正確。"},
+    {id:"er6",name:"文構造のオーガ",tier:2,exp:38,difficulty:3,q:"I found the book interesting. の文型は？",ans:"第5文型（SVOC）",choices:["第5文型（SVOC）","第4文型（SVOO）","第3文型（SVO）","第2文型（SVC）"],hint:"found＝V、the book＝O、interesting＝C",explanation:"found（V）、the book（O）、interesting（C）→ SVOC（第5文型）。O＝C の関係が成立する。"},
+    {id:"er_boss",name:"長文の魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"英語長文問題で下線部の語句の意味を問う問題の解き方を説明せよ",ans:"前後の文脈・接続詞・具体例から推測する",hint:"文脈と構造から推測",explanation:"①前後の文脈、②逆接/順接の接続詞、③ダッシュ・コロン後の言い換え、④段落のトピックから推測するのが基本戦略。"},
+  ]},
+
+  // ══════════════════════════════
+  //  社会（中3）
+  // ══════════════════════════════
+  {id:"soc_modern",name:"近現代史の遺跡",subject:"社会",icon:"🏛️",color:"#E74C3C",enemies:[
+    {id:"sm1",name:"明治スライム",tier:0,exp:20,difficulty:1,q:"1889年に発布された日本の憲法を何という？",ans:"大日本帝国憲法",choices:["大日本帝国憲法","日本国憲法","明治憲法","帝国憲法"],hint:"明治時代の憲法",explanation:"大日本帝国憲法（明治憲法）は1889年発布。天皇主権で、議会（帝国議会）も設置された。"},
+    {id:"sm2",name:"日清戦争ゴブリン",tier:0,exp:20,difficulty:1,q:"1894年に起こった日本と清の戦争を何という？",ans:"日清戦争",choices:["日清戦争","日露戦争","日中戦争","西南戦争"],hint:"明治時代の対外戦争①",explanation:"日清戦争（1894〜95）で勝利し、下関条約で台湾・遼東半島などを獲得。三国干渉で遼東半島は返還。"},
+    {id:"sm3",name:"第一次大戦オーク",tier:1,exp:28,difficulty:2,q:"第一次世界大戦（1914〜18年）の終結で結ばれた条約は？",ans:"ベルサイユ条約",choices:["ベルサイユ条約","ポーツマス条約","サンフランシスコ条約","下関条約"],hint:"パリ講和会議",explanation:"1919年パリ講和会議でベルサイユ条約が締結。ドイツは巨額賠償・領土削減を課された。"},
+    {id:"sm4",name:"大恐慌のトロール",tier:1,exp:28,difficulty:2,q:"1929年に始まった世界的経済危機を何という？",ans:"世界恐慌（大恐慌）",choices:["世界恐慌（大恐慌）","オイルショック","バブル崩壊","金融危機"],hint:"ウォール街の株価暴落から始まる",explanation:"1929年ニューヨーク株式市場の暴落から世界恐慌が始まった。各国でニューディール政策・ブロック経済が進んだ。"},
+    {id:"sm5",name:"太平洋戦争の魔術師",tier:2,exp:38,difficulty:3,q:"1941年12月8日に日本が攻撃し太平洋戦争が始まった場所は？",ans:"真珠湾（ハワイ）",choices:["真珠湾（ハワイ）","ミッドウェー島","フィリピン","グアム島"],hint:"ハワイのアメリカ海軍基地",explanation:"日本軍がハワイの真珠湾を奇襲攻撃し太平洋戦争が始まった（1941年12月8日）。"},
+    {id:"sm6",name:"戦後のオーガ",tier:2,exp:38,difficulty:3,q:"1945年8月15日に日本が受け入れた降伏宣言を何という？",ans:"ポツダム宣言",choices:["ポツダム宣言","カイロ宣言","ヤルタ協定","サンフランシスコ条約"],hint:"連合国が日本に突き付けた降伏条件",explanation:"ポツダム宣言（1945.7）を日本は8月14日受諾、15日に玉音放送で国民に伝えた。"},
+    {id:"sm_boss",name:"近現代の魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"第二次世界大戦後、日本が独立を回復したサンフランシスコ講和条約が結ばれた年と、同時に締結された日米の条約名を答えよ",ans:"1951年、日米安全保障条約",hint:"講和と安保はセット",explanation:"1951年のサンフランシスコ平和条約で日本は独立回復。同時に日米安全保障条約を締結し、在日米軍が継続駐留することになった。"},
+  ]},
+
+  {id:"soc_civic",name:"公民の城",subject:"社会",icon:"⚖️",color:"#E74C3C",enemies:[
+    {id:"sc1",name:"基本的人権スライム",tier:0,exp:20,difficulty:1,q:"日本国憲法が保障する基本的人権のうち「参政権」とは何か？",ans:"選挙権・被選挙権など政治に参加する権利",choices:["選挙権・被選挙権など政治に参加する権利","働く権利","裁判を受ける権利","教育を受ける権利"],hint:"選挙・被選挙",explanation:"参政権：国民が政治に参加する権利。選挙権（18歳以上）・被選挙権・国民投票権など。"},
+    {id:"sc2",name:"三権分立ゴブリン",tier:0,exp:20,difficulty:1,q:"日本の三権分立で、立法権を担うのは？",ans:"国会",choices:["国会","内閣","裁判所","天皇"],hint:"法律をつくる機関",explanation:"立法権＝国会、行政権＝内閣、司法権＝裁判所。互いに抑制・均衡（チェック・アンド・バランス）する。"},
+    {id:"sc3",name:"選挙制度オーク",tier:1,exp:28,difficulty:2,q:"衆議院議員の選挙で用いられる選挙制度は？（2種類）",ans:"小選挙区制と比例代表制",choices:["小選挙区制と比例代表制","大選挙区制のみ","比例代表制のみ","参議院と同じ方式"],hint:"小選挙区比例代表並立制",explanation:"衆議院は小選挙区比例代表並立制。小選挙区で289人、比例代表で176人を選出。"},
+    {id:"sc4",name:"内閣のトロール",tier:1,exp:28,difficulty:2,q:"内閣不信任決議を可決できる議院は？",ans:"衆議院",choices:["衆議院","参議院","両院合同","最高裁判所"],hint:"衆議院の優越",explanation:"内閣不信任決議は衆議院のみが持つ権限。可決されると内閣は10日以内に衆議院解散か総辞職を選ぶ。"},
+    {id:"sc5",name:"裁判所の魔術師",tier:2,exp:38,difficulty:3,q:"法律や行政の行為が憲法に違反していないかを審査する権限を何という？",ans:"違憲審査権（違憲立法審査権）",choices:["違憲審査権（違憲立法審査権）","弾劾裁判権","国政調査権","条約締結権"],hint:"憲法の番人",explanation:"違憲審査権は全裁判所が持つが、最終的に判断するのは最高裁判所（憲法の番人）。"},
+    {id:"sc6",name:"地方自治のオーガ",tier:2,exp:38,difficulty:3,q:"住民が一定数の署名を集めて条例の制定・改廃を求める権利を何という？",ans:"直接請求権（イニシアチブ）",choices:["直接請求権（イニシアチブ）","住民投票","リコール","オンブズマン"],hint:"署名→議会に請求",explanation:"直接請求権：条例制定改廃請求（有権者1/50以上の署名）、監査請求、解散・解職請求（リコール、1/3以上）など。"},
+    {id:"sc_boss",name:"公民の魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"日本国憲法の3つの基本原理を答えよ",ans:"国民主権・基本的人権の尊重・平和主義",hint:"憲法前文に書かれている",explanation:"①国民主権（国の政治は国民が決定）、②基本的人権の尊重（侵すことのできない永久の権利）、③平和主義（戦争の放棄、第9条）。"},
+  ]},
+
+  {id:"soc_economy",name:"経済の迷宮",subject:"社会",icon:"💴",color:"#E74C3C",enemies:[
+    {id:"seco1",name:"需要供給スライム",tier:0,exp:20,difficulty:1,q:"商品の価格が上がると、需要量は一般的にどうなる？",ans:"減る",choices:["減る","増える","変わらない","急激に増える"],hint:"価格と需要は逆の関係",explanation:"価格が上がると消費者は購入を控えるため需要量は減少（需要の法則）。逆に価格が下がると需要量は増加。"},
+    {id:"seco2",name:"インフレゴブリン",tier:0,exp:20,difficulty:1,q:"物価が継続的に上昇する現象を何という？",ans:"インフレーション（インフレ）",choices:["インフレーション（インフレ）","デフレーション（デフレ）","スタグフレーション","リフレーション"],hint:"物価↑",explanation:"インフレ＝物価上昇・貨幣価値低下。デフレ＝物価下落・貨幣価値上昇。デフレスパイラルは危険。"},
+    {id:"seco3",name:"日銀のオーク",tier:1,exp:28,difficulty:2,q:"日本の中央銀行を何という？",ans:"日本銀行",choices:["日本銀行","財務省","日本政策銀行","東京銀行"],hint:"お札を発行する銀行",explanation:"日本銀行（日銀）は日本の中央銀行。①発券銀行（紙幣発行）、②銀行の銀行、③政府の銀行の3役割を持つ。"},
+    {id:"seco4",name:"財政のトロール",tier:1,exp:28,difficulty:2,q:"国の歳入が歳出に足りない場合に発行されるものは？",ans:"国債",choices:["国債","地方債","社債","外債"],hint:"国が借金をするための証書",explanation:"国債は国が発行する債券（借用証書）。買った人に利子をつけて返済する約束。日本は国債残高が膨大。"},
+    {id:"seco5",name:"為替の魔術師",tier:2,exp:38,difficulty:3,q:"1ドル=100円から1ドル=80円になる変動を何という？",ans:"円高",choices:["円高","円安","ドル高","為替介入"],hint:"円の価値が上がる",explanation:"同じ1ドルを買うのに少ない円で済む＝円の価値が上がった＝円高。輸出企業には不利、輸入企業には有利。"},
+    {id:"seco6",name:"社会保障のオーガ",tier:2,exp:38,difficulty:3,q:"日本の社会保障制度の4つの柱は？",ans:"社会保険・公的扶助・社会福祉・公衆衛生",choices:["社会保険・公的扶助・社会福祉・公衆衛生","年金・医療・介護・失業","税金・保険・福祉・教育","労働・健康・住宅・教育"],hint:"社保・公扶・社福・公衛",explanation:"①社会保険（年金・医療・雇用保険等）、②公的扶助（生活保護）、③社会福祉（障害者・高齢者支援）、④公衆衛生（感染症対策等）。"},
+    {id:"seco_boss",name:"経済の魔王",tier:2,exp:50,difficulty:4,isBoss:true,q:"市場経済において「価格の自動調節機能」とは何か、需要と供給の語を使って説明せよ",ans:"需要と供給のバランスで価格が変動し、過不足を解消する働き",hint:"需給バランスで価格が変わる",explanation:"需要>供給→価格上昇→供給増・需要減→均衡へ。需要<供給→価格下落→供給減・需要増→均衡へ。この自動的な調整を「価格の自動調節機能（見えざる手）」という。"},
+  ]},
+
+  // ══════════════════════════════
+  //  国語（中3）
+  // ══════════════════════════════
+  {id:"jpn_kanji",name:"漢字の古代遺跡",subject:"国語",icon:"漢",color:"#27AE60",enemies:[
+    {id:"jk1",name:"熟語スライム",tier:0,exp:20,difficulty:1,q:"「哀愁」の読み方は？",ans:"あいしゅう",choices:["あいしゅう","あいきょう","かなしみ","ひしゅう"],hint:"哀＝悲しい、愁＝うれい",explanation:"哀愁（あいしゅう）：もの悲しいような感情。哀（あい）は悲しみ、愁（しゅう）はうれい。"},
+    {id:"jk2",name:"読みゴブリン",tier:0,exp:20,difficulty:1,q:"「脅威」の読み方は？",ans:"きょうい",choices:["きょうい","きょうおい","おびやかし","きょうはく"],hint:"脅かす＋威力",explanation:"脅威（きょうい）：おびやかすほどの力・勢い。脅（きょう）は「おびやかす」、威（い）は「力・勢い」。"},
+    {id:"jk3",name:"書き取りオーク",tier:1,exp:28,difficulty:2,q:"「こうりつ」的な方法（むだなく効果的）の漢字は？",ans:"効率",choices:["効率","公立","高率","好立"],hint:"効果的に率よく",explanation:"効率（こうりつ）：少ない労力・費用・時間で大きな効果を上げる割合。"},
+    {id:"jk4",name:"同音異義語のトロール",tier:1,exp:28,difficulty:2,q:"「きかん」（組織の機能を担う部分）の漢字は？",ans:"機関",choices:["機関","期間","器官","帰還"],hint:"蒸気機関・行政機関",explanation:"機関（きかん）：ある目的のために設けられた組織・仕組み。期間（時の長さ）、器官（臓器）、帰還（戻ること）と区別。"},
+    {id:"jk5",name:"語彙の魔術師",tier:2,exp:38,difficulty:3,q:"「忖度」の読み方と意味は？",ans:"そんたく／相手の心を推し量ること",choices:["そんたく／相手の心を推し量ること","おもんばかり／深く考えること","はいりょ／気を使うこと","こうりょ／考え合わせること"],hint:"他者の気持ちを察する",explanation:"忖度（そんたく）：他人の気持ちを推し量ること。近年は「上位者の意向を先読みして行動する」意味でも使われる。"},
+    {id:"jk6",name:"四字熟語のオーガ",tier:2,exp:38,difficulty:3,q:"「一石二鳥」の意味は？",ans:"一つの行動で二つの利益を得ること",choices:["一つの行動で二つの利益を得ること","石を二つ鳥に投げること","一人で二つの仕事をすること","二羽の鳥を一度に捕まえること"],hint:"1つの石で2羽の鳥を倒す",explanation:"一石二鳥：一つのことをして、同時に二つの利益・効果を得ること。英語のKill two birds with one stone と同じ。"},
+    {id:"jk_boss",name:"漢字の守護者",tier:2,exp:50,difficulty:4,isBoss:true,q:"「臨機応変」「試行錯誤」「喜怒哀楽」の3つの四字熟語の意味をそれぞれ説明せよ",ans:"状況に応じた対応・試して失敗を繰り返すこと・感情の総称",hint:"それぞれ漢字から意味を読み解こう",explanation:"臨機応変：状況に応じた適切な対応。試行錯誤：何度も試みて失敗を繰り返しながら解決策を探すこと。喜怒哀楽：喜び・怒り・悲しみ・楽しみのすべての感情。"},
+  ]},
+
+  {id:"jpn_literature",name:"文学の迷宮",subject:"国語",icon:"📚",color:"#27AE60",enemies:[
+    {id:"jl1",name:"文学史スライム",tier:0,exp:20,difficulty:1,q:"「坊っちゃん」の作者は？",ans:"夏目漱石",choices:["夏目漱石","森鷗外","芥川龍之介","太宰治"],hint:"明治の文豪。千円札の顔",explanation:"夏目漱石（1867〜1916）。「吾輩は猫である」「坊っちゃん」「こころ」などが代表作。"},
+    {id:"jl2",name:"古典ゴブリン",tier:0,exp:20,difficulty:1,q:"「源氏物語」の作者は？",ans:"紫式部",choices:["紫式部","清少納言","和泉式部","小野小町"],hint:"平安時代の女流作家",explanation:"紫式部が書いた世界最古の長編小説とも言われる「源氏物語」。清少納言は「枕草子」の作者。"},
+    {id:"jl3",name:"俳句オーク",tier:1,exp:28,difficulty:2,q:"「古池や 蛙飛びこむ 水の音」の作者は？",ans:"松尾芭蕉",choices:["松尾芭蕉","与謝蕪村","小林一茶","正岡子規"],hint:"俳聖と呼ばれる江戸の俳人",explanation:"松尾芭蕉（1644〜1694）。「奥の細道」でも有名。与謝蕪村・小林一茶とともに江戸三大俳人。"},
+    {id:"jl4",name:"表現技法のトロール",tier:1,exp:28,difficulty:2,q:"「山が笑う」のように人間以外のものを人間に見立てる表現技法は？",ans:"擬人法",choices:["擬人法","比喩","反復","倒置"],hint:"人に見立てる",explanation:"擬人法：人間以外のものを人間のように表現する技法。「山が笑う」「時間が走る」など。"},
+    {id:"jl5",name:"詩の魔術師",tier:2,exp:38,difficulty:3,q:"詩の「定型詩」とは何か？",ans:"決まった音数・リズムで書かれた詩",choices:["決まった音数・リズムで書かれた詩","自由なリズムで書かれた詩","外国語で書かれた詩","物語形式の詩"],hint:"5・7・5・7・7など",explanation:"定型詩：短歌（5・7・5・7・7）、俳句（5・7・5）などのように決まった音数・形式を持つ詩。対義語は自由詩。"},
+    {id:"jl6",name:"文章読解のオーガ",tier:2,exp:38,difficulty:3,q:"説明文や論説文で筆者の主張がまとめられることが多いのは？",ans:"文章の最後（結論部分）",choices:["文章の最後（結論部分）","文章の最初","文章の中間","各段落の最初"],hint:"起承転結の「結」",explanation:"論説文では序論→本論→結論の構成が多く、筆者の最終的な主張は結論部分にまとめられる。"},
+    {id:"jl_boss",name:"文学の守護者",tier:2,exp:50,difficulty:4,isBoss:true,q:"「枕草子」「徒然草」それぞれの作者と文学ジャンル（随筆・日記・物語など）を答えよ",ans:"枕草子＝清少納言・随筆、徒然草＝吉田兼好・随筆",hint:"どちらも随筆の名作",explanation:"枕草子：清少納言（平安時代）の随筆。「春はあけぼの」で有名。徒然草：吉田兼好（鎌倉〜南北朝時代）の随筆。「つれづれなるままに」で始まる。"},
+  ]},
+
+  // ══════════════════════════════
+  //  追加①：理科（進化・科学技術）
+  // ══════════════════════════════
+  {id:"sci_evo",name:"進化と科学技術の洞窟",subject:"理科",icon:"🦕",color:"#9B59B6",enemies:[
+    {id:"sev1",name:"進化スライム",tier:0,exp:20,difficulty:1,q:"生物が長い年月をかけて変化していくことを何という？",ans:"進化",choices:["進化","適応","変異","遺伝"],hint:"世代を超えた変化",explanation:"進化：生物が長い年月をかけて形質を変えていく現象。ダーウィンの自然選択説が有名。"},
+    {id:"sev2",name:"自然選択ゴブリン",tier:0,exp:20,difficulty:1,q:"環境に適した形質を持つ個体が生き残りやすいという考え方を何という？",ans:"自然選択（自然淘汰）",choices:["自然選択（自然淘汰）","人工選択","突然変異","遺伝的浮動"],hint:"ダーウィンが提唱",explanation:"自然選択説：環境に適した形質を持つ個体が生存・繁殖しやすく、その形質が広まっていく。ダーウィンが「種の起源」で提唱。"},
+    {id:"sev3",name:"相同器官オーク",tier:1,exp:28,difficulty:2,q:"人の腕・鳥の翼・クジラのひれなど、起源は同じだが形が異なる器官を何という？",ans:"相同器官",choices:["相同器官","相似器官","退化器官","変異器官"],hint:"起源（祖先）が同じ",explanation:"相同器官：形や働きは違っても同じ祖先から進化した器官。共通祖先の証拠とされる。"},
+    {id:"sev4",name:"化石のトロール",tier:1,exp:28,difficulty:2,q:"始祖鳥の化石は、何と何の中間的な特徴を持つとされるか？",ans:"爬虫類と鳥類",choices:["爬虫類と鳥類","魚類と両生類","両生類と爬虫類","鳥類と哺乳類"],hint:"羽毛と歯・爪を持つ",explanation:"始祖鳥は羽毛（鳥類的）と歯・翼の爪・長い尾骨（爬虫類的）を持ち、進化の中間形態の証拠とされる。"},
+    {id:"sev5",name:"科学技術の魔術師",tier:2,exp:38,difficulty:3,q:"再生可能エネルギーに含まれないものはどれ？",ans:"石炭火力",choices:["石炭火力","太陽光","風力","地熱"],hint:"枯渇しないエネルギー源",explanation:"再生可能エネルギー：太陽光・風力・水力・地熱・バイオマスなど自然から繰り返し得られるもの。石炭・石油・天然ガスは化石燃料で枯渇資源。"},
+    {id:"sev6",name:"環境問題のオーガ",tier:2,exp:38,difficulty:3,q:"大気中のCO₂増加が主な原因とされる環境問題は？",ans:"地球温暖化",choices:["地球温暖化","オゾン層破壊","酸性雨","砂漠化"],hint:"温室効果ガス",explanation:"CO₂などの温室効果ガスが大気中に増加すると地球温暖化が進む。オゾン層破壊はフロンが原因、酸性雨はNOx・SOxが原因。"},
+    {id:"sev_boss",name:"進化の神",tier:2,exp:50,difficulty:4,isBoss:true,q:"ダーウィンの自然選択説を「変異」「環境への適応」「生存・繁殖」の語を使って説明せよ",ans:"個体に変異があり、環境に適応した個体が生存・繁殖しやすく、その形質が次世代に広まること",hint:"変異→選択→繁殖の流れ",explanation:"①個体ごとに変異（形質の差）がある、②環境に適した変異を持つ個体が生存・繁殖しやすい（自然選択）、③その形質が子孫に受け継がれ集団に広まる、という流れが自然選択説の核心。"},
+  ]},
+
+  // ══════════════════════════════
+  //  追加②：社会（国際社会・消費者）
+  // ══════════════════════════════
+  {id:"soc_international",name:"国際社会の神殿",subject:"社会",icon:"🌐",color:"#E74C3C",enemies:[
+    {id:"sint1",name:"国連スライム",tier:0,exp:20,difficulty:1,q:"第二次世界大戦後に設立された国際平和維持機関は？",ans:"国際連合（国連）",choices:["国際連合（国連）","国際連盟","NATO","EU"],hint:"1945年設立、本部はニューヨーク",explanation:"国際連合（国連）は1945年設立。安全保障理事会・総会・事務局などの機関を持つ。国際連盟は第一次大戦後に設立されたが機能不全で解散。"},
+    {id:"sint2",name:"安保理ゴブリン",tier:0,exp:20,difficulty:1,q:"国連安全保障理事会の常任理事国は何カ国？",ans:"5カ国",choices:["5カ国","10カ国","15カ国","7カ国"],hint:"米・英・仏・露・中",explanation:"常任理事国は米・英・仏・ロシア・中国の5カ国。拒否権を持つ。非常任理事国は10カ国で2年任期。"},
+    {id:"sint3",name:"SDGsオーク",tier:1,exp:28,difficulty:2,q:"2015年に国連で採択された「持続可能な開発目標」の略称は？",ans:"SDGs",choices:["SDGs","MDGs","NGO","ODA"],hint:"Sustainable Development Goals",explanation:"SDGs（持続可能な開発目標）：2030年までに達成すべき17の目標。貧困・気候変動・ジェンダー平等など。2015年に全193カ国が合意。"},
+    {id:"sint4",name:"条約のトロール",tier:1,exp:28,difficulty:2,q:"核兵器の保有・使用・製造を禁止した2017年の国際条約は？",ans:"核兵器禁止条約",choices:["核兵器禁止条約","核不拡散条約（NPT）","包括的核実験禁止条約","部分的核実験禁止条約"],hint:"2021年発効。日本は未署名",explanation:"核兵器禁止条約（TPNW）：2017年採択・2021年発効。核保有国・日本・NATOは未署名。NPTは保有国の増加を禁止するが既存保有国を認めた条約。"},
+    {id:"sint5",name:"消費者問題の魔術師",tier:2,exp:38,difficulty:3,q:"訪問販売や電話勧誘で契約した場合、一定期間内なら無条件で契約を解除できる制度は？",ans:"クーリング・オフ",choices:["クーリング・オフ","消費者契約法","特定商取引法","製造物責任法"],hint:"頭を冷やして考え直す",explanation:"クーリング・オフ：訪問販売・電話勧誘・マルチ商法などで、契約後8日以内（マルチは20日）なら無条件で解除できる制度。"},
+    {id:"sint6",name:"国際経済のオーガ",tier:2,exp:38,difficulty:3,q:"貿易において、関税をなくし自由貿易を進める国・地域間の協定を何という？",ans:"FTA（自由貿易協定）",choices:["FTA（自由貿易協定）","EPA（経済連携協定）","WTO","ASEAN"],hint:"Free Trade Agreement",explanation:"FTA（自由貿易協定）：関税撤廃・削減を中心とした協定。EPAはFTAに加えて投資・人の移動なども含む広範な協定。WTOは多国間の貿易ルールを定める国際機関。"},
+    {id:"sint_boss",name:"国際社会の神",tier:2,exp:50,difficulty:4,isBoss:true,q:"「持続可能な社会」とはどのような社会か。SDGsと関連付けて説明せよ",ans:"現在の世代のニーズを満たしながら将来の世代もニーズを満たせるよう、経済・社会・環境のバランスを保つ社会",hint:"将来世代への責任",explanation:"持続可能な社会：将来世代が自らのニーズを満たす能力を損なわずに、現在のニーズを満たす社会（ブルントラント委員会定義）。SDGsはその実現に向けた17の具体目標。"},
+  ]},
+
+  // ══════════════════════════════
+  //  追加③：国語（古典・論説文読解）
+  // ══════════════════════════════
+  {id:"jpn_classic",name:"古典・読解の遺跡",subject:"国語",icon:"🪶",color:"#27AE60",enemies:[
+    {id:"jc1",name:"古文仮名スライム",tier:0,exp:20,difficulty:1,q:"古文の「をかし」の意味として最も近いものは？",ans:"趣がある・興味深い",choices:["趣がある・興味深い","恐ろしい","悲しい","美しい"],hint:"清少納言が好んで使った語",explanation:"をかし：趣がある・興味深い・かわいらしい などの意味。清少納言の「枕草子」に頻出。「あはれ」は深いしみじみとした感動を表す。"},
+    {id:"jc2",name:"歴史的仮名遣いゴブリン",tier:0,exp:20,difficulty:1,q:"歴史的仮名遣いの「ゐ」を現代仮名遣いに直すと？",ans:"い",choices:["い","ゆ","え","う"],hint:"「ゐどころ」→「いどころ」",explanation:"歴史的仮名遣いの変換：ゐ→い、ゑ→え、を（語中）→お、は（助詞以外の語頭）→わ、など。"},
+    {id:"jc3",name:"漢文返り点オーク",tier:1,exp:28,difficulty:2,q:"漢文の返り点で「レ点」はどのような読み方をするか？",ans:"すぐ下の字を先に読んでから上の字に返る",choices:["すぐ下の字を先に読んでから上の字に返る","2字下から返る","3字以上下から返る","読まない字を示す"],hint:"一字だけ下から返る",explanation:"レ点：直下の一字を先に読んでから上の字に戻る。一二点は複数字にわたって返る。上下点はさらに広い範囲に使う。"},
+    {id:"jc4",name:"古文助動詞のトロール",tier:1,exp:28,difficulty:2,q:"古文の助動詞「けり」の主な意味は？",ans:"過去・詠嘆",choices:["過去・詠嘆","推量・意志","打消し","完了・存続"],hint:"〜だった／〜だなあ",explanation:"けり：①過去（〜た・〜だった）、②詠嘆（〜だなあ）。詠嘆は和歌・会話文中に多い。「き」も過去だが直接体験に使う。"},
+    {id:"jc5",name:"論説文読解の魔術師",tier:2,exp:38,difficulty:3,q:"論説文で「確かに〜。しかし〜」という構造が出たとき、筆者の主張はどちら側にあるか？",ans:"「しかし」の後",choices:["「しかし」の後","「確かに」の後","両方同じ","どちらでもない"],hint:"逆接の後に主張",explanation:"「確かに〜（譲歩）。しかし〜（反論・主張）」の構造では、逆接の後に筆者の本当の主張が来る。譲歩は相手の意見を一度認めてから自説を強める技法。"},
+    {id:"jc6",name:"根拠・論理のオーガ",tier:2,exp:38,difficulty:3,q:"文章中で筆者が主張を裏付けるために用いるものを何という？",ans:"根拠（理由・証拠）",choices:["根拠（理由・証拠）","主張","要約","引用"],hint:"「なぜなら〜」の部分",explanation:"根拠：主張を支える理由・証拠・データのこと。「なぜなら」「その理由は」「例えば」などの後に続くことが多い。読解では主張と根拠を区別して読む。"},
+    {id:"jc_boss",name:"古典の守護者",tier:2,exp:50,difficulty:4,isBoss:true,q:"「徒然草」の冒頭「つれづれなるままに、日暮らし、硯にむかひて〜」を現代語に訳せ",ans:"することもなく所在ない気持ちのままに、一日中、硯に向かって（書きつけると）",hint:"つれづれ＝所在ない・退屈",explanation:"つれづれなるまま＝退屈・所在ない気持ちのまま。日暮らし＝一日中。硯にむかひて＝硯に向かって（文章を書く）。"},
+  ]},
+
+];
+let DUNGEONS=[];
+let CURSE_LIST=[];
+let ZUKAN={};
+
+// ════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════
+let S={
+  scene:"title",
+  player:{name:"冒険者",key:"warrior",hp:5,maxHp:5,totalExp:0,level:1,combo:0},
+  dungeon:null,map:null,fog:null,
+  pos:{x:1,y:1},prevPos:null,
+  enemies:[],items:[],exitPos:null,
+  curEnemy:null,prevScene:null,
+  chosen:null,judged:false,isOk:false,
+  hintUsed:false,timeLeft:20,
+  rcPhase:true,rcCount:3,
+  expGain:null,healGain:false,exp2x:false,
+  log:[],
+};
+let tID=null,rID=null,tTimer=null,lvTimer=null;
+
+// ════════════════════════════════════════════════
+//  localStorage
+// ════════════════════════════════════════════════
+function saveDungeons(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(DUNGEONS)); }catch(e){} }
+function loadDungeons(){
+  try{
+    const raw=localStorage.getItem(LS_KEY);
+    if(raw){ const arr=JSON.parse(raw); if(arr&&arr.length>0){ DUNGEONS.length=0; arr.forEach(d=>DUNGEONS.push(d)); return; } }
+  }catch(e){}
+  DEFAULT_DUNGEONS.forEach(d=>DUNGEONS.push(JSON.parse(JSON.stringify(d))));
+  saveDungeons();
+}
+
+// ════════════════════════════════════════════════
+//  LEVEL MATH
+// ════════════════════════════════════════════════
+function syncLevel(){
+  let lv=1, rem=S.player.totalExp;
+  while(rem>=expNeeded(lv)){ rem-=expNeeded(lv); lv++; }
+  S.player.level=lv;
+  return {lv, rem, need:expNeeded(lv)};
+}
+function addExp(gain){
+  const prev=S.player.level;
+  S.player.totalExp+=gain;
+  const {lv}=syncLevel();
+  if(lv>prev) triggerLvUp(prev,lv);
+  updHUD();
+  return lv>prev;
+}
+function triggerLvUp(from,to){
+  document.getElementById("lvup-sub").textContent="Lv."+to+" 到達 ／ "+titleFor(to);
+  const b=document.getElementById("lvup-banner");
+  b.classList.add("show");
+  clearTimeout(lvTimer); lvTimer=setTimeout(()=>b.classList.remove("show"),2200);
+  const badge=document.getElementById("lv-badge");
+  badge.style.background="#FFD700"; badge.style.color="#000";
+  setTimeout(()=>{ badge.style.background="var(--orange)"; },800);
+}
+
+// ════════════════════════════════════════════════
+//  MAP GENERATION
+// ════════════════════════════════════════════════
+function genMap(dungeon){
+  const G=Array.from({length:MSIZE},()=>Array.from({length:MSIZE},()=>({type:"wall",vis:false})));
+  const V=Array.from({length:MSIZE},()=>Array(MSIZE).fill(false));
+  function carve(r,c){
+    V[r][c]=true; G[r][c].type="floor";
+    for(const [dr,dc] of shuf([[0,2],[0,-2],[2,0],[-2,0]])){
+      const nr=r+dr,nc=c+dc;
+      if(nr>0&&nr<MSIZE&&nc>0&&nc<MSIZE&&!V[nr][nc]){ G[r+dr/2][c+dc/2].type="floor"; carve(nr,nc); }
+    }
+  }
+  carve(1,1);
+  const inner=[];
+  for(let r=1;r<MSIZE-1;r++) for(let c=1;c<MSIZE-1;c++){
+    if(G[r][c].type==="wall"){
+      const adj=[[0,1],[0,-1],[1,0],[-1,0]].filter(([dr,dc])=>G[r+dr]?.[c+dc]?.type==="floor").length;
+      if(adj>=2) inner.push([r,c]);
+    }
+  }
+  shuf(inner).slice(0,5).forEach(([r,c])=>{ G[r][c].type="floor"; });
+  const fog=Array.from({length:MSIZE},()=>Array(MSIZE).fill(false));
+  const fl=[];
+  for(let r=0;r<MSIZE;r++) for(let c=0;c<MSIZE;c++)
+    if(G[r][c].type==="floor"&&!(r===1&&c===1)) fl.push({x:c,y:r});
+  shuf(fl);
+  const sorted=[...fl].sort((a,b)=>(Math.abs(b.x-1)+Math.abs(b.y-1))-(Math.abs(a.x-1)+Math.abs(a.y-1)));
+  let i=0;
+  const bossCell=sorted[i++], exitCell=sorted[i++], healCell=sorted[i++], exp2Cell=sorted[i++];
+  const norm=dungeon.enemies.filter(e=>!e.isBoss);
+  const enCells=sorted.slice(i,i+norm.length);
+  const enemies=[
+    ...norm.map((en,j)=>({x:enCells[j].x,y:enCells[j].y,enemy:en,done:false})),
+    {x:bossCell.x,y:bossCell.y,enemy:dungeon.enemies.find(e=>e.isBoss)||dungeon.enemies[dungeon.enemies.length-1],done:false},
+  ];
+  const items=[{x:healCell.x,y:healCell.y,type:"heal",used:false},{x:exp2Cell.x,y:exp2Cell.y,type:"exp2x",used:false}];
+  return {G,fog,enemies,items,exitPos:exitCell};
+}
+function shuf(a){ for(let i=a.length-1;i>0;i--){ const j=0|Math.random()*(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function revFog(fog,pos){
+  for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++){
+    const nr=pos.y+dr,nc=pos.x+dc;
+    if(nr>=0&&nr<MSIZE&&nc>=0&&nc<MSIZE) fog[nr][nc]=true;
+  }
+}
+
+// ════════════════════════════════════════════════
+//  ISO RENDERER
+// ════════════════════════════════════════════════
+const OBL={TW:40,TH:24,WH:26,SPR:28};
+const ISO={canvas:null,ctx:null,anim:0};
+function isoInit(){ ISO.canvas=document.getElementById("iso"); ISO.ctx=ISO.canvas.getContext("2d"); isoResize(); window.addEventListener("resize",isoResize); }
+function isoResize(){ const w=document.getElementById("iso-wrap"); ISO.canvas.width=w.clientWidth||360; ISO.canvas.height=w.clientHeight||220; }
+function g2s(gx,gy){ return { sx:ISO.canvas.width/2+(gx-S.pos.x)*OBL.TW, sy:ISO.canvas.height/2+(gy-S.pos.y)*OBL.TH }; }
+let rafID=null;
+function isoLoop(){
+  if(S.scene==="dungeon"||S.scene==="battle"){ ISO.anim=(ISO.anim+1)%120; isoDraw(); }
+  if(S.scene==="dungeon"){
+    const {x,y}=S.pos;
+    S.enemies.forEach(e=>{ if(!e.done&&e.x===x&&e.y===y) startBattle(e); });
+    S.items.forEach(it=>{ if(!it.used&&it.x===x&&it.y===y) pickItem(it); });
+    const boss=S.enemies.find(e=>e.enemy.isBoss);
+    if(boss&&boss.done&&S.exitPos&&S.exitPos.x===x&&S.exitPos.y===y) goClear();
+  }
+  rafID=requestAnimationFrame(isoLoop);
+}
+function isoDraw(){
+  const cv=ISO.canvas,ctx=ISO.ctx,map=S.map;
+  if(!map){ ctx.clearRect(0,0,cv.width,cv.height); return; }
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.fillStyle="#080c14"; ctx.fillRect(0,0,cv.width,cv.height);
+  const {TW,TH,WH}=OBL;
+  for(let gy=0;gy<MSIZE;gy++) for(let gx=0;gx<MSIZE;gx++){
+    const {sx,sy}=g2s(gx,gy);
+    if(sx<-TW*2||sx>cv.width+TW*2||sy<-TH*3||sy>cv.height+TH*3) continue;
+    if(!S.fog[gy][gx]){ drawFogTile(ctx,sx,sy,TW,TH); continue; }
+    if(map[gy][gx].type==="floor") drawFloorTile(ctx,sx,sy,TW,TH,map[gy][gx].vis);
+  }
+  for(let gy=0;gy<MSIZE;gy++) for(let gx=0;gx<MSIZE;gx++){
+    if(!S.fog[gy][gx]) continue;
+    const {sx,sy}=g2s(gx,gy);
+    if(sx<-TW*2||sx>cv.width+TW*2||sy<-TH*3||sy>cv.height+TH*3) continue;
+    if(S.map[gy][gx].type==="wall") drawWallTile(ctx,sx,sy,TW,TH,WH);
+  }
+  for(let gy=0;gy<MSIZE;gy++) for(let gx=0;gx<MSIZE;gx++){
+    if(!S.fog[gy][gx]||S.map[gy][gx].type!=="floor") continue;
+    const {sx,sy}=g2s(gx,gy);
+    if(sx<-TW*2||sx>cv.width+TW*2||sy<-TH*3||sy>cv.height+TH*3) continue;
+    const isPlayer=(gx===S.pos.x&&gy===S.pos.y);
+    const en=S.enemies.find(e=>!e.done&&e.x===gx&&e.y===gy);
+    const it=S.items.find(i=>!i.used&&i.x===gx&&i.y===gy);
+    const boss=S.enemies.find(e=>e.enemy.isBoss);
+    const isExit=boss&&boss.done&&S.exitPos&&S.exitPos.x===gx&&S.exitPos.y===gy;
+    if(isExit) drawExitTile(ctx,sx,sy,TW,TH);
+    if(it) drawItemTile(ctx,sx,sy,TW,TH,it.type);
+    if(en){ const normLeft=S.enemies.filter(e=>!e.enemy.isBoss&&!e.done).length; drawEnemyTile(ctx,sx,sy,TW,TH,en.enemy,en.enemy.isBoss&&normLeft>0); }
+    if(isPlayer) drawPlayerTile(ctx,sx,sy,TW,TH);
+  }
+}
+function drawFogTile(ctx,sx,sy,TW,TH){ ctx.fillStyle="#060810"; ctx.fillRect(sx-TW/2,sy-TH/2,TW,TH); }
+function drawFloorTile(ctx,sx,sy,TW,TH,vis){
+  ctx.fillStyle=vis?"#192438":"#111a28"; ctx.fillRect(sx-TW/2,sy-TH/2,TW,TH);
+  ctx.strokeStyle="rgba(255,255,255,.06)"; ctx.lineWidth=.5; ctx.strokeRect(sx-TW/2+.5,sy-TH/2+.5,TW-1,TH-1);
+}
+function drawWallTile(ctx,sx,sy,TW,TH,WH){
+  ctx.fillStyle="#2a3a52"; ctx.fillRect(sx-TW/2,sy-TH/2,TW,TH);
+  ctx.strokeStyle="rgba(255,255,255,.1)"; ctx.lineWidth=.5; ctx.strokeRect(sx-TW/2,sy-TH/2,TW,TH);
+  ctx.fillStyle="#1a2538"; ctx.fillRect(sx-TW/2,sy+TH/2,TW,WH);
+  ctx.strokeStyle="rgba(0,0,0,.4)"; ctx.lineWidth=.5; ctx.strokeRect(sx-TW/2,sy+TH/2,TW,WH);
+  const mid=sy+TH/2+WH/2;
+  ctx.strokeStyle="rgba(0,0,0,.3)"; ctx.lineWidth=.5;
+  ctx.beginPath(); ctx.moveTo(sx-TW/2,mid); ctx.lineTo(sx+TW/2,mid); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(sx,sy+TH/2); ctx.lineTo(sx,mid); ctx.stroke();
+  ctx.strokeStyle="rgba(255,255,255,.1)"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(sx-TW/2,sy+TH/2); ctx.lineTo(sx+TW/2,sy+TH/2); ctx.stroke();
+}
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r); ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+}
+function drawPlayerTile(ctx,sx,sy,TW,TH){
+  const c=avC(S.player.key);
+  const cx=sx, by=sy+TH/2;
+  const bob=Math.sin(ISO.anim/10)*(S.scene==="dungeon"?1.2:0);
+  const SPR=OBL.SPR;
+  ctx.save();
+  ctx.fillStyle="rgba(0,0,0,.4)"; ctx.beginPath(); ctx.ellipse(cx,by-2,SPR*.38,SPR*.14,0,0,Math.PI*2); ctx.fill();
+  const fy=by-SPR*.15-bob;
+  ctx.fillStyle=c.body;
+  ctx.fillRect(cx-SPR*.22,fy-SPR*.28,SPR*.18,SPR*.28); ctx.fillRect(cx+SPR*.04,fy-SPR*.28,SPR*.18,SPR*.28);
+  ctx.fillStyle="#1a1008";
+  ctx.fillRect(cx-SPR*.25,fy-SPR*.06,SPR*.22,SPR*.1); ctx.fillRect(cx+SPR*.03,fy-SPR*.06,SPR*.22,SPR*.1);
+  ctx.fillStyle=c.body; roundRect(ctx,cx-SPR*.28,fy-SPR*.72,SPR*.56,SPR*.44,3); ctx.fill();
+  ctx.fillStyle=c.trim; roundRect(ctx,cx-SPR*.28,fy-SPR*.72,SPR*.56,SPR*.12,2); ctx.fill();
+  ctx.fillStyle=c.skin; ctx.fillRect(cx-SPR*.42,fy-SPR*.68,SPR*.16,SPR*.32); ctx.fillRect(cx+SPR*.26,fy-SPR*.68,SPR*.16,SPR*.32);
+  ctx.fillStyle=c.skin; ctx.beginPath(); ctx.arc(cx,fy-SPR*.9,SPR*.22,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=c.hair; ctx.beginPath(); ctx.arc(cx,fy-SPR*.96,SPR*.22,Math.PI,Math.PI*2); ctx.fill();
+  ctx.fillStyle="#1a1a2e";
+  ctx.beginPath(); ctx.arc(cx-SPR*.07,fy-SPR*.89,SPR*.04,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx+SPR*.07,fy-SPR*.89,SPR*.04,0,Math.PI*2); ctx.fill();
+  const lvCol=S.player.level>=100?"#FFD700":S.player.level>=50?"#ff88cc":"#00C8FF";
+  ctx.fillStyle="rgba(0,0,0,.75)"; roundRect(ctx,cx-16,fy-SPR*1.32,32,13,4); ctx.fill();
+  ctx.fillStyle=lvCol; ctx.font="bold 8px 'Noto Sans JP',sans-serif"; ctx.textAlign="center";
+  ctx.fillText("Lv."+S.player.level,cx,fy-SPR*1.22); ctx.textAlign="left";
+  ctx.restore();
+}
+function drawEnemyTile(ctx,sx,sy,TW,TH,en,sealed){
+  const cx=sx, by=sy+TH/2;
+  const pulse=Math.sin(ISO.anim/14)*1.2;
+  const SPR=OBL.SPR*.92;
+  ctx.save();
+  ctx.fillStyle="rgba(0,0,0,.38)"; ctx.beginPath(); ctx.ellipse(cx,by-2,SPR*.35,SPR*.12,0,0,Math.PI*2); ctx.fill();
+  const bc=en.isBoss?"#8B1A1A":"#6B2020";
+  const ey=by-SPR*.1+pulse;
+  ctx.fillStyle=bc;
+  ctx.fillRect(cx-SPR*.2,ey-SPR*.26,SPR*.16,SPR*.26); ctx.fillRect(cx+SPR*.04,ey-SPR*.26,SPR*.16,SPR*.26);
+  roundRect(ctx,cx-SPR*.26,ey-SPR*.68,SPR*.52,SPR*.42,3); ctx.fill();
+  ctx.fillRect(cx-SPR*.4,ey-SPR*.64,SPR*.16,SPR*.3); ctx.fillRect(cx+SPR*.24,ey-SPR*.64,SPR*.16,SPR*.3);
+  ctx.fillStyle="#c08070"; ctx.beginPath(); ctx.arc(cx,ey-SPR*.86,SPR*.2,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle="rgba(255,240,80,.95)";
+  ctx.beginPath(); ctx.arc(cx-SPR*.07,ey-SPR*.87,SPR*.05,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx+SPR*.07,ey-SPR*.87,SPR*.05,0,Math.PI*2); ctx.fill();
+  if(en.isBoss){
+    ctx.fillStyle="#FFD700";
+    const ky=ey-SPR*1.08;
+    ctx.beginPath();
+    ctx.moveTo(cx-SPR*.18,ky+SPR*.1); ctx.lineTo(cx-SPR*.18,ky); ctx.lineTo(cx-SPR*.06,ky+SPR*.08);
+    ctx.lineTo(cx,ky-SPR*.08); ctx.lineTo(cx+SPR*.06,ky+SPR*.08); ctx.lineTo(cx+SPR*.18,ky);
+    ctx.lineTo(cx+SPR*.18,ky+SPR*.1); ctx.closePath(); ctx.fill();
+    ctx.shadowColor="#FFD700"; ctx.shadowBlur=10;
+    ctx.strokeStyle="rgba(255,215,0,.5)"; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(cx,ey-SPR*.86,SPR*.22,0,Math.PI*2); ctx.stroke();
+    ctx.shadowBlur=0;
+  }
+  if(sealed){
+    ctx.fillStyle="rgba(80,0,120,.58)";
+    ctx.fillRect(cx-OBL.TW/2,sy-OBL.TH/2,OBL.TW,OBL.TH+OBL.WH);
+    ctx.strokeStyle="#9B59B6"; ctx.lineWidth=1.5;
+    ctx.strokeRect(cx-OBL.TW/2+1,sy-OBL.TH/2+1,OBL.TW-2,OBL.TH+OBL.WH-2);
+    ctx.fillStyle="#cc88ff"; ctx.font="bold 10px sans-serif"; ctx.textAlign="center";
+    ctx.fillText("⛔",cx,sy+OBL.TH/2+OBL.WH*.6); ctx.textAlign="left";
+  }
+  ctx.fillStyle="rgba(0,0,0,.78)";
+  const nm=en.name; ctx.font="bold 8px 'Noto Sans JP',sans-serif";
+  const tw2=ctx.measureText(nm).width+8;
+  roundRect(ctx,cx-tw2/2,ey-SPR*1.28,tw2,13,3); ctx.fill();
+  ctx.fillStyle=en.isBoss?"#FFD700":"#ff8888"; ctx.textAlign="center";
+  ctx.fillText(nm,cx,ey-SPR*1.18); ctx.textAlign="left";
+  ctx.restore();
+}
+function drawItemTile(ctx,sx,sy,TW,TH,type){
+  const cx=sx, cy=sy-TH*.15;
+  const bob=Math.sin(ISO.anim/9)*2.5;
+  ctx.save(); ctx.shadowColor=type==="heal"?"#ff88cc":"#FFD700"; ctx.shadowBlur=10;
+  ctx.beginPath(); ctx.arc(cx,cy-8-bob,7,0,Math.PI*2);
+  ctx.fillStyle=type==="heal"?"rgba(255,100,160,.92)":"rgba(255,215,0,.92)"; ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,.65)"; ctx.beginPath(); ctx.arc(cx-2,cy-11-bob,2.5,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.fillStyle="rgba(0,0,0,.65)"; roundRect(ctx,cx-14,cy+2,28,12,4); ctx.fill();
+  ctx.fillStyle=type==="heal"?"#ffaacc":"#FFD700"; ctx.font="8px sans-serif"; ctx.textAlign="center";
+  ctx.fillText(type==="heal"?"HP+1":"EXP×2",cx,cy+10); ctx.textAlign="left";
+  ctx.restore();
+}
+function drawExitTile(ctx,sx,sy,TW,TH){
+  const cx=sx, cy=sy;
+  const glow=.5+Math.abs(Math.sin(ISO.anim/18))*.5;
+  ctx.save();
+  ctx.fillStyle="rgba(0,200,150,"+(0.08+glow*.07)+")"; ctx.fillRect(cx-TW/2,cy-TH/2,TW,TH);
+  ctx.shadowColor="#00C896"; ctx.shadowBlur=8+glow*6;
+  ctx.strokeStyle="rgba(0,200,150,"+(0.6+glow*.35)+")"; ctx.lineWidth=1.5;
+  ctx.strokeRect(cx-TW/2+1,cy-TH/2+1,TW-2,TH-2); ctx.shadowBlur=0;
+  ctx.fillStyle="rgba(0,220,160,"+(0.8+glow*.2)+")"; ctx.font="bold 9px 'Noto Sans JP',sans-serif";
+  ctx.textAlign="center"; ctx.fillText("出口",cx,cy+3); ctx.textAlign="left";
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════════
+//  AVATAR SVG
+// ════════════════════════════════════════════════
+function avC(key){ return (AVATARS.find(a=>a.key===key)||AVATARS[0]).c; }
+function avHUD(el,key){
+  const c=avC(key);
+  el.innerHTML='<rect width="30" height="30" rx="4" fill="'+c.body+'" opacity=".3"/>'
+    +'<ellipse cx="15" cy="10" rx="6" ry="6" fill="'+c.skin+'"/>'
+    +'<ellipse cx="15" cy="7" rx="6" ry="3.5" fill="'+c.hair+'"/>'
+    +'<circle cx="12.5" cy="10.5" r="1" fill="#1a1a2e"/><circle cx="17.5" cy="10.5" r="1" fill="#1a1a2e"/>'
+    +'<rect x="9" y="16" width="12" height="12" fill="'+c.body+'" rx="2"/>'
+    +'<rect x="9" y="16" width="12" height="4" fill="'+c.trim+'" rx="1"/>'
+    +'<rect x="5" y="15" width="5" height="4" fill="'+c.trim+'" rx="1"/>'
+    +'<rect x="20" y="15" width="5" height="4" fill="'+c.trim+'" rx="1"/>';
+}
+function avFull(el,key){
+  const c=avC(key);
+  el.innerHTML='<ellipse cx="30" cy="78" rx="14" ry="4" fill="#000" opacity=".35"/>'
+    +'<rect x="22" y="62" width="7" height="16" fill="'+c.body+'" rx="2"/>'
+    +'<rect x="31" y="62" width="7" height="16" fill="'+c.body+'" rx="2"/>'
+    +'<ellipse cx="25.5" cy="78" rx="5" ry="3" fill="#1a1008"/>'
+    +'<ellipse cx="34.5" cy="78" rx="5" ry="3" fill="#1a1008"/>'
+    +'<rect x="18" y="40" width="24" height="24" fill="'+c.body+'" rx="3"/>'
+    +'<rect x="18" y="40" width="24" height="8" fill="'+c.trim+'" rx="2"/>'
+    +'<rect x="11" y="38" width="9" height="7" fill="'+c.trim+'" rx="2"/>'
+    +'<rect x="40" y="38" width="9" height="7" fill="'+c.trim+'" rx="2"/>'
+    +'<rect x="11" y="45" width="7" height="16" fill="'+c.skin+'" rx="2"/>'
+    +'<rect x="42" y="45" width="7" height="16" fill="'+c.skin+'" rx="2"/>'
+    +'<ellipse cx="30" cy="14" rx="9" ry="9" fill="'+c.skin+'"/>'
+    +'<ellipse cx="30" cy="9" rx="9" ry="5" fill="'+c.hair+'"/>'
+    +'<circle cx="27" cy="14" r="1.2" fill="#1a1a2e"/><circle cx="33" cy="14" r="1.2" fill="#1a1a2e"/>';
+}
+function enSVG(en,col){
+  const b=en.isBoss,bc=b?"#FFD700":col,bd=b?"#8B1A1A":col;
+  return '<svg viewBox="0 0 80 80" width="76" height="76">'
+    +'<ellipse cx="40" cy="76" rx="16" ry="5" fill="#000" opacity=".4"/>'
+    +(b?'<polygon points="26,28 30,18 34,26 40,14 46,26 50,18 54,28" fill="#FFD700" opacity=".9"/>':'')
+    +'<rect x="26" y="38" width="28" height="24" fill="'+bd+'" rx="4"/>'
+    +'<rect x="20" y="38" width="9" height="7" fill="'+bc+'" rx="2"/>'
+    +'<rect x="51" y="38" width="9" height="7" fill="'+bc+'" rx="2"/>'
+    +'<rect x="20" y="45" width="7" height="14" fill="#c08070" rx="2"/>'
+    +'<rect x="53" y="45" width="7" height="14" fill="#c08070" rx="2"/>'
+    +'<rect x="30" y="62" width="8" height="14" fill="'+bd+'" rx="2"/>'
+    +'<rect x="42" y="62" width="8" height="14" fill="'+bd+'" rx="2"/>'
+    +'<ellipse cx="40" cy="28" rx="12" ry="12" fill="#c08070"/>'
+    +'<ellipse cx="40" cy="21" rx="12" ry="7" fill="'+(b?"#3a0a0a":"#2a1a0a")+'"/>'
+    +'<circle cx="36" cy="28" r="2" fill="#fff" opacity=".9"/><circle cx="44" cy="28" r="2" fill="#fff" opacity=".9"/>'
+    +'<circle cx="36.8" cy="28.3" r="1" fill="#1a1a2e"/><circle cx="44.8" cy="28.3" r="1" fill="#1a1a2e"/>'
+    +'<path d="M36,34 Q40,37 44,34" stroke="#a06050" stroke-width="1" fill="none"/>'
+    +(b?'<rect x="53" y="36" width="3" height="22" fill="#c0c8d0" rx="1"/><rect x="49" y="43" width="10" height="2" fill="#8B6914" rx="1"/>':'')
+    +'</svg>';
+}
+
+// ════════════════════════════════════════════════
+//  MOVEMENT
+// ════════════════════════════════════════════════
+const DIRS={ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]};
+function tryMove(dx,dy){
+  if(S.scene!=="dungeon") return;
+  const nx=S.pos.x+dx, ny=S.pos.y+dy;
+  if(nx<0||nx>=MSIZE||ny<0||ny>=MSIZE) return;
+  if(S.map[ny][nx].type==="wall"){ flashWall(); return; }
+  const bossEnt=S.enemies.find(e=>e.enemy.isBoss&&!e.done);
+  if(bossEnt&&bossEnt.x===nx&&bossEnt.y===ny){
+    const normLeft=S.enemies.filter(e=>!e.enemy.isBoss&&!e.done).length;
+    if(normLeft>0){ showToast("⛔ ボスは封印中！雑魚を"+normLeft+"体倒せ",2500); return; }
+  }
+  S.prevPos={...S.pos};
+  S.pos={x:nx,y:ny};
+  S.map[ny][nx].vis=true;
+  revFog(S.fog,S.pos);
+  updDpad();
+}
+function flashWall(){ const c=ISO.canvas; ISO.ctx.fillStyle="rgba(255,255,255,.1)"; ISO.ctx.fillRect(0,0,c.width,c.height); setTimeout(()=>isoDraw(),80); }
+function updDpad(){
+  if(S.scene!=="dungeon") return;
+  const {map,pos}=S;
+  document.getElementById("bu").disabled=!(map[pos.y-1]?.[pos.x]?.type==="floor");
+  document.getElementById("bd").disabled=!(map[pos.y+1]?.[pos.x]?.type==="floor");
+  document.getElementById("bl").disabled=!(map[pos.y]?.[pos.x-1]?.type==="floor");
+  document.getElementById("br").disabled=!(map[pos.y]?.[pos.x+1]?.type==="floor");
+  document.getElementById("dinfo").textContent="残"+S.enemies.filter(e=>!e.done).length+"体 ／ HP"+S.player.hp+"/"+S.player.maxHp;
+  const dot=document.getElementById("curse-dot");
+  if(dot) dot.style.display=CURSE_LIST.length>0?"block":"none";
+}
+function pickItem(it){
+  it.used=true;
+  if(it.type==="heal"){ S.player.hp=Math.min(S.player.hp+1,S.player.maxHp); showToast("💊 HP+1 回復！"); updHUD(); }
+  else { S.exp2x=true; showToast("⭐ 次の正解でEXP×2！"); }
+}
+
+// ════════════════════════════════════════════════
+//  BATTLE
+// ════════════════════════════════════════════════
+function startBattle(me){
+  if(S.scene!=="dungeon") return;
+  S.scene="battle"; clearTs();
+  S.curEnemy=me;
+  Object.assign(S,{chosen:null,judged:false,isOk:false,hintUsed:false,timeLeft:20,rcPhase:true,rcCount:3,expGain:null,healGain:false});
+  document.getElementById("bov").classList.remove("hidden");
+  renderBov(); startRecall();
+}
+function startCurseBattle(curse){
+  const fakeEnemy={x:-1,y:-1,enemy:curse.enemy,done:false,isCurse:true,_ref:curse};
+  S.prevScene=S.scene; S.scene="battle"; clearTs();
+  S.curEnemy=fakeEnemy;
+  Object.assign(S,{chosen:null,judged:false,isOk:false,hintUsed:false,timeLeft:20,rcPhase:true,rcCount:3,expGain:null,healGain:false});
+  document.getElementById("bov").classList.remove("hidden");
+  showGame(); renderBov(); startRecall();
+}
+function startRecall(){
+  clearTs(); S.rcPhase=true; S.rcCount=3; renderBov();
+  rID=setInterval(()=>{
+    S.rcCount--;
+    if(S.rcCount<=0){ clearInterval(rID); S.rcPhase=false; renderBov(); startBTimer(); }
+    else { const el=document.getElementById("rc-n"); if(el) el.textContent=S.rcCount; }
+  },1000);
+}
+function startBTimer(){
+  clearInterval(tID);
+  tID=setInterval(()=>{ S.timeLeft--; updTimer(); if(S.timeLeft<=0){ clearInterval(tID); onTimeout(); } },1000);
+}
+function updTimer(){
+  const t=S.timeLeft, col=t>10?"#00C896":t>5?"#EA8712":"#E24B4A";
+  const b=document.getElementById("tmr-b"), n=document.getElementById("tmr-n");
+  if(b){ b.style.width=(t/20*100)+"%"; b.style.background=col; }
+  if(n){ n.textContent=t+"s"; n.style.color=col; }
+}
+function onTimeout(){
+  clearTs(); S.judged=true; S.isOk=false; S.chosen=null;
+  S.player.hp=Math.max(0,S.player.hp-2); S.player.combo=0;
+  addCurse(S.curEnemy.enemy, 2);
+  S.log.push("⏱ タイムオーバー HP-2 正解:"+S.curEnemy.enemy.ans);
+  renderBov(); updHUD();
+  if(S.player.hp===0) setTimeout(goGO,1200);
+}
+function onChoice(c){
+  if(S.judged) return;
+  clearTs(); S.chosen=c; S.judged=true;
+  const en=S.curEnemy.enemy, ok=(c.trim()===en.ans.trim()||c===en.ans); S.isOk=ok;
+  const isCurse=!!(S.curEnemy&&S.curEnemy.isCurse);
+  if(ok){
+    if(!isCurse) S.curEnemy.done=true;
+    S.player.combo=(S.player.combo||0)+1;
+    const fast=S.timeLeft>10;
+    let gain=fast?en.exp:Math.floor(en.exp*.6);
+    if(S.hintUsed) gain=Math.floor(gain*.5);
+    if(S.exp2x){ gain*=2; S.exp2x=false; }
+    S.expGain=gain; addExp(gain); S.healGain=false;
+    // 呪い解除
+    const ci=CURSE_LIST.findIndex(x=>x.enemy.id===en.id);
+    if(ci>=0){
+      const lost=CURSE_LIST[ci].hpLost;
+      CURSE_LIST.splice(ci,1);
+      if(lost>0&&S.player.hp<S.player.maxHp){ S.player.hp=Math.min(S.player.maxHp,S.player.hp+lost); S.healGain=true; showToast("💖 呪い解除！HP+"+lost+"回復！",2500); }
+    }
+    if(S.player.combo>=3&&S.player.hp<S.player.maxHp){ S.player.hp++; S.player.combo=0; S.healGain=true; }
+    if(en.isBoss&&!isCurse&&S.player.hp<S.player.maxHp){ S.player.hp=S.player.maxHp; S.healGain=true; }
+    spawnDmgNum("+"+gain+" EXP",true);
+    zukanRecord(en,true);
+    S.log.push("✅ "+en.name+"撃破 +"+gain+"EXP"+(fast?" ⚡":"")+(S.healGain?" 💖":""));
+    setTimeout(()=>{ S.expGain=null; S.healGain=false; updHUD(); },1100);
+  } else {
+    S.player.hp=Math.max(0,S.player.hp-1); S.player.combo=0;
+    addCurse(en,1);
+    spawnDmgNum("HP-1",false);
+    zukanRecord(en,false);
+    S.log.push("❌ 不正解 HP-1 正解:"+en.ans);
+    if(S.player.hp===0) setTimeout(goGO,1200);
+  }
+  renderBov(); updHUD();
+}
+function addCurse(en,hpLost){
+  if(!CURSE_LIST.find(x=>x.enemy.id===en.id)) CURSE_LIST.push({enemy:en,hpLost,dungeonColor:S.dungeon?.color||"#E24B4A"});
+}
+function spawnDmgNum(txt,good){
+  const bov=document.getElementById("bov"); if(!bov||bov.classList.contains("hidden")) return;
+  const el=document.createElement("div"); el.className="dmg-num";
+  el.textContent=txt; el.style.color=good?"#FFD700":"#E24B4A";
+  el.style.left=(80+Math.random()*60)+"px"; el.style.top=(60+Math.random()*30)+"px";
+  bov.appendChild(el); setTimeout(()=>el.remove(),1100);
+}
+function backToMap(){
+  clearTs(); document.getElementById("bov").classList.add("hidden");
+  if(S.curEnemy&&S.curEnemy.isCurse){
+    S.scene=S.prevScene||"dungeon";
+    if(S.scene!=="dungeon"){ hideGame(); showScr("scr-select"); updCurseBar(); }
+    else updDpad();
+  } else { S.scene="dungeon"; updDpad(); }
+}
+function fleeBattle(){
+  clearTs(); document.getElementById("bov").classList.add("hidden");
+  S.scene="dungeon";
+  if(S.prevPos){ S.pos={...S.prevPos}; revFog(S.fog,S.pos); }
+  updDpad(); showToast("🏃 逃げた！");
+}
+
+// ════════════════════════════════════════════════
+//  RENDER BATTLE OVERLAY
+// ════════════════════════════════════════════════
+function renderBov(){
+  const me=S.curEnemy, en=me.enemy, d=S.dungeon;
+  const t=S.timeLeft, tc=t>10?"#00C896":t>5?"#EA8712":"#E24B4A";
+  const isCurse=!!(me&&me.isCurse);
+  const isBossText=en.isBoss&&(!en.choices||en.choices.length===0);
+  const chs=isBossText?"":(en.choices||[]).map(c=>{
+    let cls="ch";
+    if(S.judged){ if(c===en.ans) cls+=" correct"; else if(c===S.chosen) cls+=" wrong"; }
+    return '<button class="'+cls+'" data-c="'+c+'" '+(S.judged?"disabled":"")+'>'+c+'</button>';
+  }).join("");
+  const textInput=(isBossText&&!S.judged)
+    ? '<div style="margin-bottom:8px"><input id="boss-inp" style="width:100%;background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.18);border-radius:9px;padding:11px 12px;color:white;font-size:14px;font-family:inherit;outline:none" placeholder="答えを入力…"><button id="boss-submit" style="width:100%;margin-top:6px;padding:11px;background:rgba(0,128,158,.7);border:.5px solid var(--blue);border-radius:9px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">→ 解答する</button></div>'
+    : "";
+  let hint="";
+  if(!S.judged) hint=S.hintUsed?('<div class="hint-box">💡 '+en.hint+'</div>'):('<button class="hint-btn" id="h-btn">💡 ヒントを使う（EXP半減）</button>');
+  const expl=en.explanation?('<div style="margin-top:6px;padding:7px 9px;background:rgba(255,255,255,.04);border-radius:7px;font-size:10px;color:rgba(255,255,255,.6);line-height:1.7">📖 '+en.explanation+'</div>'):"";
+  let res="";
+  if(S.judged){
+    if(S.isOk){
+      let healMsg="";
+      if(S.healGain) healMsg=isCurse?"💖 呪い解除！HP回復！":en.isBoss?"💖 ボス撃破→HP全回復！":"💖 3連コンボ→HP+1！";
+      res='<div class="res-msg ok"><span class="r-ok">✅ 正解！'+en.name+'を撃破！</span>'
+        +(t>10?'<span class="r-spd"> ⚡速攻ボーナス</span>':"")
+        +(S.hintUsed?'<br><span style="font-size:9px;color:var(--muted)">ヒント使用:EXP半減</span>':"")
+        +(healMsg?'<br><span class="r-heal">'+healMsg+'</span>':"")+expl+'</div>';
+    } else if(S.chosen){
+      res='<div class="res-msg ng"><span class="r-ng">❌ 不正解。HP-1</span><br>'
+        +'<span class="r-ans">正解: <strong style="color:white">'+en.ans+'</strong></span>'
+        +expl
+        +'<br><span class="r-curse">🔮 呪いリストに記録。後で再挑戦するとHP回復</span>'
+        +'<div style="display:flex;gap:6px;margin-top:8px">'
+        +'<button id="retry-btn" style="flex:1;padding:10px;background:rgba(0,128,158,.7);border:.5px solid var(--blue);border-radius:8px;color:white;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer">🔄 再挑戦</button>'
+        +'<button id="flee-btn" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.55);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer">🏃 逃げる</button>'
+        +'</div></div>';
+    } else {
+      res='<div class="res-msg ng"><span class="r-ng">⏱ タイムオーバー！HP-2</span><br>'
+        +'<span class="r-ans">正解: <strong style="color:white">'+en.ans+'</strong></span>'
+        +expl
+        +'<br><span class="r-curse">🔮 呪いリストに記録。後で再挑戦するとHP回復</span>'
+        +'<div style="display:flex;gap:6px;margin-top:8px">'
+        +'<button id="retry-btn" style="flex:1;padding:10px;background:rgba(0,128,158,.7);border:.5px solid var(--blue);border-radius:8px;color:white;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer">🔄 再挑戦</button>'
+        +'<button id="flee-btn" style="flex:1;padding:10px;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.55);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer">🏃 逃げる</button>'
+        +'</div></div>';
+    }
+  }
+  const ep=S.expGain?'<div class="exp-pop">+'+S.expGain+' EXP ⭐</div>':"";
+  const hp2=S.healGain?'<div class="heal-pop">💖 HP回復！</div>':"";
+  let actionBtns="";
+  if(S.judged&&S.isOk){
+    actionBtns='<button class="next-btn" id="n-btn" style="margin-bottom:6px">'+(isCurse?"✕ 閉じる":"🗺 マップへ戻る")+'</button>';
+    if(isCurse&&CURSE_LIST.length>0) actionBtns+='<button id="next-curse-btn" style="width:100%;padding:11px;background:rgba(226,75,74,.55);border:.5px solid #E24B4A;border-radius:9px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">🔮 次の呪い問題へ（残り'+CURSE_LIST.length+'問）</button>';
+  }
+  const rcTitle=isCurse?"🔮 呪い問題":"想起フェーズ";
+  const rcDesc=isCurse?"正解すると失ったHPが戻る":"頭の中で答えを思い浮かべよう";
+  const rc='<div class="recall-box"><div style="font-size:20px;margin-bottom:4px">🧠</div>'
+    +'<div class="rc-ttl">'+rcTitle+'</div><div class="rc-desc">'+rcDesc+'</div>'
+    +'<div class="rc-num" id="rc-n">'+S.rcCount+'</div></div>';
+  const tmrHtml=(!S.judged)
+    ?'<div class="tmr-row"><span class="tmr-lbl">制限時間</span><span class="tmr-num" id="tmr-n" style="color:'+tc+'">'+t+'s</span></div>'
+     +'<div class="tmr-bg"><div class="tmr-bar" id="tmr-b" style="width:'+(t/20*100)+'%;background:'+tc+'"></div></div>'
+    :"";
+  const qLabel=isCurse?"🔮 呪い問題":"❓ QUESTION";
+  const bat=tmrHtml
+    +'<div class="q-box"><div class="q-lbl">'+qLabel+'</div><div class="q-txt">'+en.q+'</div></div>'
+    +hint+(isBossText?textInput:'<div class="choices">'+chs+'</div>')
+    +ep+hp2+res+actionBtns;
+  const bossBadge=en.isBoss?'<div class="boss-badge">👑 BOSS</div>':"";
+  const enBgCol=en.isBoss?"#FFD700":d.color;
+  const hpFillCol=en.isBoss?"#FFD700":"#E24B4A";
+  const tierSkulls=Array.from({length:(en.tier||0)+1}).map(()=>'<span style="font-size:10px">💀</span>').join("");
+  document.getElementById("bov-in").innerHTML=
+    '<div class="b-loc">'+(isCurse?"🔮 呪い問題 ▸ "+d.name:d.name+" ▸ エンカウント")+'</div>'
+    +'<div class="en-card" style="--ec:'+enBgCol+'">'+bossBadge
+    +'<div class="en-bg" style="background:'+enBgCol+'"></div>'
+    +'<div class="en-ct"><div class="en-sw">'+enSVG(en,d.color)+'</div>'
+    +'<div class="en-inf"><div class="en-nm" style="color:'+(en.isBoss?"#FFD700":"white")+'">'+en.name+'</div>'
+    +'<div class="en-hbg"><div class="en-hfill" style="width:'+(me.done?0:100)+'%;background:'+hpFillCol+'"></div></div>'
+    +'<div>'+tierSkulls+'</div>'
+    +'<div style="font-size:9px;color:var(--muted);margin-top:3px">撃破 +'+en.exp+' EXP</div>'
+    +'</div></div></div>'+(S.rcPhase?rc:bat);
+  document.querySelectorAll(".ch").forEach(b=>{ if(!b.disabled) b.onclick=()=>onChoice(b.dataset.c); });
+  const hb=document.getElementById("h-btn");
+  if(hb) hb.onclick=()=>{ S.hintUsed=true; renderBov(); if(!S.rcPhase) startBTimer(); };
+  const nb=document.getElementById("n-btn"); if(nb) nb.onclick=backToMap;
+  const ncb=document.getElementById("next-curse-btn"); if(ncb) ncb.onclick=()=>{ if(CURSE_LIST.length>0) startCurseBattle(CURSE_LIST[0]); else backToMap(); };
+  const rb=document.getElementById("retry-btn");
+  if(rb) rb.onclick=()=>{ Object.assign(S,{chosen:null,judged:false,isOk:false,hintUsed:false,timeLeft:20,rcPhase:true,rcCount:3,expGain:null,healGain:false}); renderBov(); startRecall(); };
+  const fb=document.getElementById("flee-btn"); if(fb) fb.onclick=fleeBattle;
+  const bs=document.getElementById("boss-submit");
+  if(bs){ const doSub=()=>{ const v=(document.getElementById("boss-inp")?.value||"").trim(); if(v) onChoice(v); }; bs.onclick=doSub; document.getElementById("boss-inp")?.addEventListener("keydown",e=>{ if(e.key==="Enter") doSub(); }); }
+}
+
+// ════════════════════════════════════════════════
+//  HUD
+// ════════════════════════════════════════════════
+function updHUD(){
+  const {lv,rem,need}=syncLevel();
+  const pct=(rem/need)*100;
+  document.getElementById("lv-badge").textContent="Lv."+lv;
+  document.getElementById("exp-fill").style.width=pct+"%";
+  document.getElementById("exp-num").textContent=rem+"/"+need;
+  document.getElementById("hud-ttl").textContent=titleFor(lv);
+  document.getElementById("hud-name").textContent=S.player.name;
+  document.getElementById("hearts").innerHTML=Array.from({length:S.player.maxHp}).map((_,i)=>'<span class="heart'+(i<S.player.hp?"":" empty")+'">❤️</span>').join("");
+  avHUD(document.getElementById("hud-av"),S.player.key);
+}
+
+// ════════════════════════════════════════════════
+//  ZUKAN
+// ════════════════════════════════════════════════
+function zukanRecord(en,ok){
+  if(!ZUKAN[en.id]) ZUKAN[en.id]={name:en.name,tier:en.tier,isBoss:!!en.isBoss,kills:0,mastery:0};
+  const z=ZUKAN[en.id];
+  if(ok){ z.kills++; z.mastery=[1,3,6,10,15].filter(t=>z.kills>=t).length; }
+}
+function renderZukan(){
+  const all=[]; DUNGEONS.forEach(d=>d.enemies.forEach(en=>all.push({...en,dungeonColor:d.color})));
+  const total=all.length, unlocked=all.filter(en=>ZUKAN[en.id]).length;
+  document.getElementById("zk-count-badge").textContent=unlocked+"/"+total+"体";
+  document.getElementById("zukan-grid").innerHTML=all.map(en=>{
+    const z=ZUKAN[en.id], locked=!z;
+    const stars=Array.from({length:5}).map((_,i)=>'<span class="zk-star'+(i<(z?.mastery||0)?"":" off")+'">★</span>').join("");
+    return '<div class="zk-cell'+(locked?" locked":"")+'">'
+      +'<div style="font-size:22px">'+(en.isBoss?"🐲":en.tier===1?"👹":"👺")+'</div>'
+      +'<div class="zk-nm" style="color:'+(locked?"#666":en.dungeonColor)+'">'+(locked?"???":en.name)+'</div>'
+      +'<div class="zk-stars">'+stars+'</div>'
+      +'<div class="zk-count">'+(locked?"":z.kills+"回撃破")+'</div>'
+      +'</div>';
+  }).join("");
+}
+
+// ════════════════════════════════════════════════
+//  DUNGEON MENU (in-dungeon)
+// ════════════════════════════════════════════════
+function openDungeonMenu(){
+  if(S.scene!=="dungeon") return;
+  const menu=document.getElementById("dungeon-menu"); menu.style.display="flex";
+  const list=document.getElementById("dmenu-curse-list");
+  const empty=document.getElementById("dmenu-curse-empty");
+  if(CURSE_LIST.length===0){ list.innerHTML=""; empty.style.display="block"; }
+  else{
+    empty.style.display="none";
+    list.innerHTML=CURSE_LIST.map((c,i)=>
+      '<div style="display:flex;align-items:center;gap:8px;background:rgba(226,75,74,.1);border:.5px solid rgba(226,75,74,.3);border-radius:8px;padding:8px 10px;margin-bottom:5px">'
+      +'<div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:700;color:#ff8888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+c.enemy.name+'</div>'
+      +'<div style="font-size:9px;color:var(--muted)">HP損失:'+c.hpLost+' ／ 正解でHP回復</div></div>'
+      +'<button data-ci="'+i+'" style="padding:6px 10px;background:rgba(0,128,158,.7);border:.5px solid var(--blue);border-radius:6px;color:white;font-size:10px;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap">挑戦</button>'
+      +'</div>'
+    ).join("");
+    list.querySelectorAll("button[data-ci]").forEach(btn=>{
+      btn.onclick=()=>{ menu.style.display="none"; startCurseBattle(CURSE_LIST[+btn.dataset.ci]); };
+    });
+  }
+  document.getElementById("dmenu-status").onclick=()=>{ menu.style.display="none"; openStatusPopup(); };
+  document.getElementById("dmenu-close").onclick=()=>{ menu.style.display="none"; };
+}
+function openStatusPopup(){
+  const pop=document.getElementById("status-popup"); pop.style.display="flex";
+  const {lv}=syncLevel();
+  const normDone=S.enemies.filter(e=>!e.enemy.isBoss&&e.done).length;
+  const normTotal=S.enemies.filter(e=>!e.enemy.isBoss).length;
+  document.getElementById("status-content").innerHTML=
+    '<div class="s-row"><span>冒険者</span><span style="font-weight:700;color:white">'+S.player.name+'</span></div>'
+    +'<div class="s-row"><span>称号</span><span style="color:var(--orange)">'+titleFor(lv)+'</span></div>'
+    +'<div class="s-row"><span>レベル</span><span style="color:var(--gold);font-weight:700">Lv.'+lv+'</span></div>'
+    +'<div class="s-row"><span>HP</span><span>'+"❤️".repeat(S.player.hp)+"🖤".repeat(S.player.maxHp-S.player.hp)+'</span></div>'
+    +'<div class="s-row"><span>雑魚討伐</span><span style="color:var(--green)">'+normDone+"/"+normTotal+'体</span></div>'
+    +'<div class="s-row"><span>ボス</span><span style="color:'+(normDone<normTotal?"#E24B4A":"#FFD700")+'">'+(normDone<normTotal?"⛔ 封印中":"🔓 解放済")+'</span></div>'
+    +'<div class="s-row"><span>呪い問題</span><span style="color:'+(CURSE_LIST.length>0?"#E24B4A":"var(--green)")+'">'+( CURSE_LIST.length>0?CURSE_LIST.length+"問残り":"なし ✨")+'</span></div>';
+  document.getElementById("status-close").onclick=()=>{ pop.style.display="none"; };
+}
+
+// ════════════════════════════════════════════════
+//  CURSE BAR (dungeon select)
+// ════════════════════════════════════════════════
+function updCurseBar(){
+  const bar=document.getElementById("curse-bar"); if(!bar) return;
+  if(CURSE_LIST.length>0){
+    bar.style.display="flex";
+    document.getElementById("curse-bar-sub").textContent=CURSE_LIST.map(c=>c.enemy.name).join("・")+" ("+CURSE_LIST.length+"問)";
+    document.getElementById("btn-curse-challenge").onclick=()=>startCurseBattle(CURSE_LIST[0]);
+  } else bar.style.display="none";
+}
+
+// ════════════════════════════════════════════════
+//  ADMIN
+// ════════════════════════════════════════════════
+let editingDungeonId=null;
+function renderDungeonList(){
+  const el=document.getElementById("d-list"); if(!el) return;
+  el.innerHTML=DUNGEONS.map(d=>
+    '<button class="d-btn" style="--dc:'+d.color+'" data-id="'+d.id+'">'
+    +'<span class="d-icn">'+d.icon+'</span>'
+    +'<div><div class="d-nm">'+d.name+'</div>'
+    +'<div class="d-mt">'+d.subject+' ▸ '+(d.enemies?d.enemies.length:0)+'問 ▸ 探索</div></div>'
+    +'<span class="d-arr" style="color:'+d.color+'">▶</span>'
+    +'</button>'
+  ).join("");
+  el.querySelectorAll(".d-btn").forEach(b=>{ b.onclick=()=>enterDungeon(DUNGEONS.find(x=>x.id===b.dataset.id)); });
+}
+function renderAdminList(){
+  const el=document.getElementById("admin-dungeon-list"); if(!el) return;
+  el.innerHTML=DUNGEONS.map(d=>{
+    const qc=d.enemies?d.enemies.length:0, bc=d.enemies?d.enemies.filter(e=>e.isBoss).length:0;
+    return '<div style="background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.1);border-left:3px solid '+d.color+';border-radius:11px;padding:11px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">'
+      +'<span style="font-size:22px;flex-shrink:0">'+d.icon+'</span>'
+      +'<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+d.name+'</div>'
+      +'<div style="font-size:9px;color:var(--muted)">'+d.subject+' ／ '+qc+'問（ボス'+bc+'）</div></div>'
+      +'<button data-edit="'+d.id+'" style="padding:5px 9px;background:rgba(0,128,158,.5);border:.5px solid var(--blue);border-radius:6px;color:white;font-size:10px;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0">編集</button>'
+      +'<button data-del="'+d.id+'" style="padding:5px 9px;background:rgba(226,75,74,.3);border:.5px solid rgba(226,75,74,.5);border-radius:6px;color:#ff8888;font-size:10px;font-weight:700;font-family:inherit;cursor:pointer;flex-shrink:0">削除</button>'
+      +'</div>';
+  }).join("");
+  el.querySelectorAll("button[data-edit]").forEach(b=>{ b.onclick=()=>openEdit(b.dataset.edit); });
+  el.querySelectorAll("button[data-del]").forEach(b=>{ b.onclick=()=>deleteDungeon(b.dataset.del); });
+}
+function openEdit(id){
+  const d=DUNGEONS.find(x=>x.id===id); if(!d) return;
+  editingDungeonId=id;
+  document.getElementById("edit-dungeon-sub").textContent=d.name+" を編集";
+  document.getElementById("edit-name").value=d.name;
+  document.getElementById("edit-subject").value=d.subject||"";
+  document.getElementById("edit-icon").value=d.icon||"📚";
+  document.getElementById("edit-color").value=d.color||"#00809E";
+  document.getElementById("edit-err").style.display="none";
+  const qs=d.enemies.map(en=>({
+    difficulty:en.difficulty||(en.isBoss?4:(en.tier||0)+1),
+    ...(en.isBoss?{type:"boss"}:{}),
+    monster_name:en.name,
+    question:en.q,
+    ...(en.choices&&!en.isBoss?{choices:en.choices}:{}),
+    answer:en.ans,
+    explanation:en.explanation||en.hint||"",
+  }));
+  document.getElementById("edit-json").value=JSON.stringify(qs,null,2);
+  const cp=document.getElementById("color-presets");
+  cp.innerHTML=COLOR_PRESETS.map(c=>'<div data-color="'+c+'" style="width:22px;height:22px;border-radius:4px;background:'+c+';cursor:pointer;border:2px solid '+(c===d.color?"white":"transparent")+'"></div>').join("");
+  cp.querySelectorAll("div[data-color]").forEach(el=>{
+    el.onclick=()=>{ document.getElementById("edit-color").value=el.dataset.color; cp.querySelectorAll("div[data-color]").forEach(e=>e.style.borderColor="transparent"); el.style.borderColor="white"; };
+  });
+  showScr("scr-admin-edit");
+}
+function saveEdit(){
+  const d=DUNGEONS.find(x=>x.id===editingDungeonId); if(!d) return;
+  const errEl=document.getElementById("edit-err"); errEl.style.display="none";
+  try{
+    const raw=document.getElementById("edit-json").value;
+    const qs=JSON.parse(sanitizeJSON(raw));
+    if(!Array.isArray(qs)) throw new Error("配列形式で入力してください");
+    d.name   =document.getElementById("edit-name").value.trim()||d.name;
+    d.subject=document.getElementById("edit-subject").value.trim()||d.subject;
+    d.icon   =document.getElementById("edit-icon").value.trim()||d.icon;
+    d.color  =document.getElementById("edit-color").value;
+    d.enemies=buildEnemies(qs,d.id);
+    saveDungeons(); renderDungeonList(); renderAdminList(); showScr("scr-admin");
+  }catch(e){ errEl.textContent="エラー: "+e.message; errEl.style.display="block"; }
+}
+let _delTargetId=null;
+function deleteDungeon(id){
+  const d=DUNGEONS.find(x=>x.id===id); if(!d) return;
+  _delTargetId=id;
+  document.getElementById("del-modal-name").textContent="「"+d.name+"」を削除します。この操作は元に戻せません。";
+  const modal=document.getElementById("del-modal");
+  modal.style.display="flex";
+  document.getElementById("del-cancel").onclick=()=>{ modal.style.display="none"; _delTargetId=null; };
+  document.getElementById("del-ok").onclick=()=>{
+    modal.style.display="none";
+    if(!_delTargetId) return;
+    DUNGEONS.splice(DUNGEONS.findIndex(x=>x.id===_delTargetId),1);
+    _delTargetId=null;
+    saveDungeons(); renderDungeonList(); renderAdminList();
+  };
+}
+function sanitizeJSON(raw){
+  raw=raw.replace(/^```[a-zA-Z]*\s*/,"").replace(/\s*```\s*$/,"");
+  raw=raw.replace(/\u3000/g," ");
+  raw=raw.replace(/["\u201C\u201D\u201E\u201F]/g,'"').replace(/['\u2018\u2019]/g,"'");
+  raw=raw.replace(/,(\s*[}\]])/g,"$1");
+  raw=raw.replace(/^\uFEFF/,"");
+  return raw.trim();
+}
+function buildEnemies(qs,baseId){
+  const DIF_EXP={1:20,2:28,3:38,4:50}, DIF_TIER={1:0,2:1,3:2,4:2};
+  return qs.map((q,i)=>{
+    const diff=q.difficulty||1, isBoss=q.type==="boss"||diff===4;
+    return { id:baseId+"_q"+i, name:q.monster_name||(isBoss?"ボス":"敵"+(i+1)),
+      tier:isBoss?2:(DIF_TIER[diff]||0), exp:DIF_EXP[diff]||20,
+      isBoss, difficulty:diff, q:q.question, ans:q.answer,
+      choices:(!isBoss&&q.choices)?q.choices:undefined,
+      hint:q.hint||q.explanation||"", explanation:q.explanation||"" };
+  });
+}
+function importDungeon(){
+  const raw=document.getElementById("admin-json-input").value.trim();
+  const errEl=document.getElementById("admin-import-err"); errEl.style.display="none";
+  try{
+    const cleaned=sanitizeJSON(raw);
+    let j; try{ j=JSON.parse(cleaned); }catch(e){ throw new Error("JSON形式が正しくありません: "+e.message); }
+    const qs=j.questions||j.problems||j.items||j.data||j.quiz;
+    if(!j.name||!Array.isArray(qs)) throw new Error("nameとquestions配列が必要です");
+    const id="d_"+Date.now()+"_"+Math.random().toString(36).slice(2,6);
+    const d={ id, name:j.name, subject:j.subject||"", icon:j.icon||"📚", color:j.color||"#00809E", enemies:buildEnemies(qs,id) };
+    DUNGEONS.push(d); saveDungeons(); renderDungeonList();
+    document.getElementById("admin-json-input").value="";
+    renderAdminList(); showScr("scr-admin");
+  }catch(e){ errEl.textContent="エラー: "+e.message; errEl.style.display="block"; }
+}
+function generatePrompt(){
+  const subject=document.getElementById("prompt-subject").value.trim()||"数学";
+  const count=document.getElementById("prompt-count").value;
+  const level=document.getElementById("prompt-level").value;
+  const p="以下のJSON形式で「"+subject+"」の問題を"+count+"問＋ボス問題1問作成してください。\n対象レベル: "+level+"\n\n【重要】JSONのみを出力し、```json などのMarkdown記法は不要です。\n\n{\n  \"name\": \"ダンジョン名（例："+subject+"の○○）\",\n  \"subject\": \""+subject+"\",\n  \"icon\": \"テーマに合う絵文字1文字\",\n  \"color\": \"テーマカラー（16進数カラーコード）\",\n  \"questions\": [\n    {\n      \"difficulty\": 1,\n      \"monster_name\": \"モンスター名（例：○○ゴブリン）\",\n      \"question\": \"問題文\",\n      \"choices\": [\"選択肢A\", \"選択肢B\", \"選択肢C\", \"選択肢D\"],\n      \"answer\": \"正解（choicesの中の1つと完全一致）\",\n      \"explanation\": \"不正解時の解説\"\n    }\n  ]\n}\n\n【ルール】\n・difficulty 1〜3の問題を"+count+"問（1が最も易しく3が最も難しい）\n・difficulty 4のボス問題を1問（type:\"boss\"を追加、choicesなし、記述式）\n・answerはchoicesの中の1つと文字列が完全一致\n・ボス問題のanswerは簡潔な記述式の答え";
+  document.getElementById("prompt-output").value=p;
+  document.getElementById("prompt-output-wrap").style.display="block";
+}
+
+// ════════════════════════════════════════════════
+//  SCENE MANAGEMENT
+// ════════════════════════════════════════════════
+const SCRS=["scr-title","scr-avatar","scr-select","scr-zukan","scr-admin","scr-admin-add","scr-admin-edit","scr-admin-prompt","scr-clear","scr-go"];
+function showScr(id){ SCRS.forEach(s=>{ const el=document.getElementById(s); if(el) el.classList.toggle("hidden",s!==id); }); if(id==="scr-select") updCurseBar(); }
+function showGame(){ document.getElementById("hud").style.display="flex"; document.getElementById("game-area").style.display="flex"; showScr(null); }
+function hideGame(){ document.getElementById("hud").style.display="none"; document.getElementById("game-area").style.display="none"; }
+function showToast(msg,dur=2200){ const el=document.getElementById("toast"); el.textContent=msg; el.classList.add("show"); clearTimeout(tTimer); tTimer=setTimeout(()=>el.classList.remove("show"),dur); }
+function clearTs(){ clearInterval(tID); clearInterval(rID); }
+
+function enterDungeon(d){
+  if(!d) return;
+  const {G,fog,enemies,items,exitPos}=genMap(d);
+  G[1][1].vis=true; revFog(fog,{x:1,y:1});
+  Object.assign(S,{dungeon:d,map:G,fog,enemies,items,exitPos,pos:{x:1,y:1},prevPos:null,log:[],exp2x:false,scene:"dungeon"});
+  showGame(); document.getElementById("bov").classList.add("hidden");
+  document.getElementById("dungeon-menu").style.display="none";
+  document.getElementById("status-popup").style.display="none";
+  isoResize(); updHUD(); updDpad();
+  if(CURSE_LIST.length>0){
+    showToast("🔮 呪い問題が"+CURSE_LIST.length+"問あります！",2000);
+    setTimeout(()=>startCurseBattle(CURSE_LIST[0]),2200);
+  } else showToast("🗺 ダンジョンに潜入！WASDまたはボタンで移動");
+}
+
+function goClear(){
+  clearTs(); S.scene="clear"; hideGame();
+  const {lv}=syncLevel();
+  document.getElementById("scr-clear").classList.remove("hidden");
+  document.getElementById("clr-sub").textContent=S.dungeon.name;
+  avFull(document.getElementById("clr-av"),S.player.key);
+  document.getElementById("clr-stats").innerHTML=
+    '<div class="s-row"><span>冒険者</span><span style="color:white;font-weight:700">'+S.player.name+'</span></div>'
+    +'<div class="s-row"><span>称号</span><span style="color:var(--orange)">'+titleFor(lv)+'</span></div>'
+    +'<div class="s-row"><span>レベル</span><span style="color:var(--gold);font-weight:700">Lv.'+lv+'</span></div>'
+    +'<div class="s-row"><span>残りHP</span><span>'+"❤️".repeat(S.player.hp)+'</span></div>'
+    +'<div class="s-row"><span>累計EXP</span><span style="color:var(--green)">'+S.player.totalExp+'</span></div>';
+  document.getElementById("clr-log").innerHTML=S.log.slice(-8).map(l=>'<div>'+l+'</div>').join("");
+}
+function goGO(){
+  clearTs(); S.scene="gameover"; hideGame();
+  const {lv}=syncLevel();
+  document.getElementById("scr-go").classList.remove("hidden");
+  document.getElementById("go-stats").innerHTML=
+    '<div class="s-row"><span>到達レベル</span><span style="color:var(--gold);font-weight:700">Lv.'+lv+'</span></div>'
+    +'<div class="s-row"><span>称号</span><span style="color:var(--orange)">'+titleFor(lv)+'</span></div>'
+    +'<div class="s-row"><span>累計EXP</span><span style="color:var(--green)">'+S.player.totalExp+'</span></div>'
+    +'<div style="font-size:9px;color:rgba(255,255,255,.2);text-align:center;margin-top:6px">EXPの半分を引き継いで再挑戦できる</div>';
+}
+
+// ════════════════════════════════════════════════
+//  BOOT
+// ════════════════════════════════════════════════
+window.addEventListener("load",()=>{
+  loadDungeons();
+
+  // avatar grid
+  document.getElementById("av-grid").innerHTML=AVATARS.map((a,i)=>
+    '<div class="av-cell'+(i===0?" sel":"")+'" data-i="'+i+'" data-key="'+a.key+'">'
+    +'<svg viewBox="0 0 30 30" width="34" height="34">'
+    +'<rect width="30" height="30" rx="4" fill="'+a.c.body+'" opacity=".28"/>'
+    +'<ellipse cx="15" cy="10" rx="5.5" ry="5.5" fill="'+a.c.skin+'"/>'
+    +'<ellipse cx="15" cy="7" rx="5.5" ry="3.2" fill="'+a.c.hair+'"/>'
+    +'<rect x="9" y="15" width="12" height="11" fill="'+a.c.body+'" rx="2"/>'
+    +'<rect x="9" y="15" width="12" height="4" fill="'+a.c.trim+'" rx="1"/>'
+    +'</svg><span class="av-lbl">'+a.label+'</span></div>'
+  ).join("");
+  document.querySelectorAll(".av-cell").forEach(el=>{
+    el.onclick=()=>{ document.querySelectorAll(".av-cell").forEach(e=>e.classList.remove("sel")); el.classList.add("sel"); S.player.key=el.dataset.key; };
+  });
+
+  renderDungeonList();
+
+  // nav buttons
+  document.getElementById("btn-start").onclick=()=>showScr("scr-avatar");
+  document.getElementById("btn-av-ok").onclick=()=>{ S.player.name=document.getElementById("name-inp").value.trim()||"冒険者"; showScr("scr-select"); };
+  document.getElementById("btn-chav").onclick=()=>showScr("scr-avatar");
+  document.getElementById("btn-zukan").onclick=()=>{ renderZukan(); showScr("scr-zukan"); };
+  document.getElementById("btn-zukan-back").onclick=()=>showScr("scr-select");
+  document.getElementById("btn-admin").onclick=()=>{ renderAdminList(); showScr("scr-admin"); };
+  document.getElementById("btn-admin-back").onclick=()=>showScr("scr-select");
+  document.getElementById("btn-admin-add").onclick=()=>{ document.getElementById("admin-json-input").value=""; document.getElementById("admin-import-err").style.display="none"; showScr("scr-admin-add"); };
+  document.getElementById("btn-admin-add-back").onclick=()=>showScr("scr-admin");
+  document.getElementById("btn-admin-import-ok").onclick=()=>importDungeon();
+  document.getElementById("btn-edit-save").onclick=()=>saveEdit();
+  document.getElementById("btn-edit-back").onclick=()=>showScr("scr-admin");
+  document.getElementById("btn-admin-prompt").onclick=()=>{ document.getElementById("prompt-output-wrap").style.display="none"; showScr("scr-admin-prompt"); };
+  document.getElementById("btn-gen-prompt").onclick=()=>generatePrompt();
+  document.getElementById("btn-copy-prompt").onclick=()=>{
+    const ta=document.getElementById("prompt-output"); ta.select(); ta.setSelectionRange(0,99999);
+    navigator.clipboard.writeText(ta.value).then(()=>{ const b=document.getElementById("btn-copy-prompt"); b.textContent="✅ コピーしました！"; setTimeout(()=>{ b.textContent="📋 コピー"; },1800); }).catch(()=>document.execCommand("copy"));
+  };
+  document.getElementById("btn-prompt-back").onclick=()=>showScr("scr-admin");
+
+  // dpad
+  document.getElementById("dctr").onclick=()=>{ const m=document.getElementById("dungeon-menu"); if(m.style.display==="flex") m.style.display="none"; else openDungeonMenu(); };
+  document.getElementById("bu").onclick=()=>tryMove(0,-1);
+  document.getElementById("bd").onclick=()=>tryMove(0,1);
+  document.getElementById("bl").onclick=()=>tryMove(-1,0);
+  document.getElementById("br").onclick=()=>tryMove(1,0);
+
+  // end screens
+  document.getElementById("btn-clr-next").onclick=()=>{ S.player.hp=S.player.maxHp; S.player.combo=0; document.getElementById("scr-clear").classList.add("hidden"); showScr("scr-select"); };
+  document.getElementById("btn-clr-ttl").onclick=()=>{ document.getElementById("scr-clear").classList.add("hidden"); showScr("scr-title"); };
+  document.getElementById("btn-retry").onclick=()=>{ S.player.totalExp=Math.floor(S.player.totalExp/2); S.player.hp=S.player.maxHp; S.player.combo=0; syncLevel(); document.getElementById("scr-go").classList.add("hidden"); showScr("scr-select"); };
+  document.getElementById("btn-go-ttl").onclick=()=>{ S.player.totalExp=0; S.player.hp=S.player.maxHp; S.player.combo=0; syncLevel(); document.getElementById("scr-go").classList.add("hidden"); showScr("scr-title"); };
+
+  // keyboard
+  document.addEventListener("keydown",e=>{ const d=DIRS[e.key]; if(d){ e.preventDefault(); tryMove(d[0],d[1]); } });
+
+  isoInit(); isoLoop();
+  document.getElementById("t-version").textContent="v"+APP_VERSION;
+});
+
+</script>
+</body>
+</html>
