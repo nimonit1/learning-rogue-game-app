@@ -114,6 +114,8 @@ canvas#iso{display:block;width:100%;height:100%}
 .subj-tabs::-webkit-scrollbar{display:none}
 .subj-tab{flex-shrink:0;background:var(--bg2);border:.5px solid var(--border);border-radius:20px;padding:6px 13px;color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s;white-space:nowrap}
 .subj-tab.active{background:var(--blue);border-color:var(--blue);color:white}
+.pg-btn{padding:6px 14px;background:rgba(255,255,255,.08);border:.5px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.6);font-size:11px;font-weight:700;font-family:inherit;cursor:pointer}
+.pg-btn:disabled{opacity:.2;cursor:default}
 .zukan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px;width:100%}
 .zk-cell{background:var(--bg2);border:.5px solid var(--border);border-radius:9px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:72px}
 .zk-cell.locked{opacity:.35;filter:grayscale(1)}
@@ -171,6 +173,7 @@ canvas#iso{display:block;width:100%;height:100%}
         <div style="width:100%;max-width:300px;height:.5px;background:rgba(255,255,255,.08);margin:4px 0 12px"></div>
         <div style="width:100%;max-width:300px;display:flex;flex-direction:column;gap:6px">
           <button id="dmenu-status" style="width:100%;padding:10px 14px;background:rgba(255,255,255,.06);border:.5px solid rgba(255,255,255,.12);border-radius:9px;color:rgba(255,255,255,.7);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;text-align:left">📊 ステータス確認</button>
+          <button id="dmenu-exit" style="width:100%;padding:10px 14px;background:rgba(226,75,74,.12);border:.5px solid rgba(226,75,74,.4);border-radius:9px;color:rgba(226,75,74,.8);font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;text-align:left">🚪 ダンジョンを離脱</button>
           <button id="dmenu-close" style="width:100%;padding:10px;background:transparent;border:.5px solid rgba(255,255,255,.1);border-radius:9px;color:rgba(255,255,255,.35);font-size:12px;font-family:inherit;cursor:pointer">✕ 閉じる</button>
         </div>
       </div>
@@ -222,7 +225,8 @@ canvas#iso{display:block;width:100%;height:100%}
       <div class="pg-h">ダンジョン選択</div>
       <div class="pg-sub">探索するダンジョンを選べ</div>
       <div id="subj-tabs"></div>
-      <div id="d-list"></div>
+      <div id="d-list" style="min-height:270px"></div>
+      <div id="d-pager" style="display:flex;align-items:center;justify-content:center;gap:12px;height:38px"></div>
       <div id="curse-bar" style="display:none;background:rgba(226,75,74,.1);border:.5px solid rgba(226,75,74,.3);border-radius:10px;padding:9px 12px;margin-bottom:8px;align-items:center;gap:8px">
         <span style="font-size:16px">🔮</span>
         <div style="flex:1;min-width:0">
@@ -261,7 +265,9 @@ canvas#iso{display:block;width:100%;height:100%}
       </div>
       <div class="pg-sub">ダンジョンの追加・編集・削除</div>
       <button id="btn-admin-add" style="width:100%;padding:11px;background:rgba(0,128,158,.6);border:.5px solid var(--blue);border-radius:10px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:12px">＋ 新規ダンジョンを追加</button>
-      <div id="admin-dungeon-list"></div>
+      <div id="admin-subj-tabs" class="subj-tabs"></div>
+      <div id="admin-dungeon-list" style="min-height:270px"></div>
+      <div id="admin-pager" style="display:flex;align-items:center;justify-content:center;gap:12px;height:38px"></div>
       <button class="ghost-btn" id="btn-admin-back" style="width:100%;margin-top:8px">← 戻る</button>
     </div>
   </div>
@@ -275,6 +281,19 @@ canvas#iso{display:block;width:100%;height:100%}
       <div style="display:flex;gap:8px">
         <button id="del-cancel" style="flex:1;padding:11px;background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.15);border-radius:9px;color:rgba(255,255,255,.6);font-size:13px;font-family:inherit;cursor:pointer">キャンセル</button>
         <button id="del-ok" style="flex:1;padding:11px;background:rgba(226,75,74,.7);border:.5px solid #E24B4A;border-radius:9px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">削除する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXIT CONFIRM MODAL -->
+  <div id="exit-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.8);backdrop-filter:blur(6px);align-items:center;justify-content:center;padding:20px">
+    <div style="background:#141820;border:1px solid rgba(226,75,74,.5);border-radius:14px;padding:20px 18px;width:100%;max-width:300px;text-align:center">
+      <div style="font-size:24px;margin-bottom:8px">🚪</div>
+      <div style="font-size:14px;font-weight:700;color:white;margin-bottom:6px">ダンジョンを離脱</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:16px">進行状況は失われます。<br>本当に離脱しますか？</div>
+      <div style="display:flex;gap:8px">
+        <button id="exit-cancel" style="flex:1;padding:11px;background:rgba(255,255,255,.07);border:.5px solid rgba(255,255,255,.15);border-radius:9px;color:rgba(255,255,255,.6);font-size:13px;font-family:inherit;cursor:pointer">キャンセル</button>
+        <button id="exit-ok" style="flex:1;padding:11px;background:rgba(226,75,74,.7);border:.5px solid #E24B4A;border-radius:9px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer">離脱する</button>
       </div>
     </div>
   </div>
@@ -616,6 +635,10 @@ let DUNGEONS=[];
 let CURSE_LIST=[];
 const SUBJ_ICON={"数学":"📐","理科":"🔬","英語":"🌍","社会":"🏛️","国語":"📖"};
 let SEL_SUBJ=null;
+let ADMIN_SEL_SUBJ=null;
+let SEL_PAGE=0;
+let ADMIN_PAGE=0;
+const PAGE_SIZE=5;
 let ZUKAN={};
 
 // ════════════════════════════════════════════════
@@ -1092,6 +1115,16 @@ function fleeBattle(){
   if(S.prevPos){ S.pos={...S.prevPos}; revFog(S.fog,S.pos); }
   updDpad(); showToast("🏃 逃げた！");
 }
+function exitDungeon(){
+  clearTs();
+  document.getElementById("bov").classList.add("hidden");
+  document.getElementById("dungeon-menu").style.display="none";
+  document.getElementById("exit-modal").style.display="none";
+  S.scene="title";
+  S.player.combo=0;
+  hideGame();
+  showScr("scr-select");
+}
 
 // ════════════════════════════════════════════════
 //  RENDER BATTLE OVERLAY
@@ -1284,22 +1317,34 @@ function updCurseBar(){
 //  ADMIN
 // ════════════════════════════════════════════════
 let editingDungeonId=null;
+function renderPager(id,total,cur,onPage){
+  const el=document.getElementById(id); if(!el) return;
+  el.style.visibility=total>1?'visible':'hidden';
+  el.innerHTML=
+    '<button class="pg-btn" data-p="'+(cur-1)+'" '+(cur===0?'disabled':'')+'>◀ 前</button>'
+    +'<span style="font-size:11px;color:var(--muted);min-width:40px;text-align:center">'+(cur+1)+' / '+total+'</span>'
+    +'<button class="pg-btn" data-p="'+(cur+1)+'" '+(cur>=total-1?'disabled':'')+'>次 ▶</button>';
+  el.querySelectorAll('.pg-btn:not([disabled])').forEach(b=>{ b.onclick=()=>onPage(+b.dataset.p); });
+}
 function renderDungeonList(){
   const tabs=document.getElementById("subj-tabs");
   if(tabs){
     const subjects=[...new Set(DUNGEONS.map(d=>d.subject))];
-    if(!SEL_SUBJ||!subjects.includes(SEL_SUBJ)) SEL_SUBJ=subjects[0];
+    if(!SEL_SUBJ||!subjects.includes(SEL_SUBJ)){ SEL_SUBJ=subjects[0]; SEL_PAGE=0; }
     tabs.innerHTML=subjects.map(s=>
       '<button class="subj-tab'+(s===SEL_SUBJ?' active':'')+'" data-subj="'+s+'">'
       +(SUBJ_ICON[s]||'')+'&nbsp;'+s+'</button>'
     ).join('');
     tabs.querySelectorAll('.subj-tab').forEach(btn=>{
-      btn.onclick=()=>{ SEL_SUBJ=btn.dataset.subj; renderDungeonList(); };
+      btn.onclick=()=>{ SEL_SUBJ=btn.dataset.subj; SEL_PAGE=0; renderDungeonList(); };
     });
   }
   const el=document.getElementById("d-list"); if(!el) return;
-  const list=DUNGEONS.filter(d=>d.subject===SEL_SUBJ);
-  el.innerHTML=list.map(d=>
+  const all=DUNGEONS.filter(d=>d.subject===SEL_SUBJ);
+  const totalPages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));
+  if(SEL_PAGE>=totalPages) SEL_PAGE=0;
+  const paged=all.slice(SEL_PAGE*PAGE_SIZE,(SEL_PAGE+1)*PAGE_SIZE);
+  el.innerHTML=paged.map(d=>
     '<button class="d-btn" style="--dc:'+d.color+'" data-id="'+d.id+'">'
     +'<span class="d-icn">'+d.icon+'</span>'
     +'<div><div class="d-nm">'+d.name+'</div>'
@@ -1308,10 +1353,27 @@ function renderDungeonList(){
     +'</button>'
   ).join('');
   el.querySelectorAll('.d-btn').forEach(b=>{ b.onclick=()=>enterDungeon(DUNGEONS.find(x=>x.id===b.dataset.id)); });
+  renderPager("d-pager",totalPages,SEL_PAGE,(p)=>{ SEL_PAGE=p; renderDungeonList(); });
 }
 function renderAdminList(){
+  const tabs=document.getElementById("admin-subj-tabs");
+  if(tabs){
+    const subjects=[...new Set(DUNGEONS.map(d=>d.subject))];
+    if(!ADMIN_SEL_SUBJ||!subjects.includes(ADMIN_SEL_SUBJ)){ ADMIN_SEL_SUBJ=subjects[0]; ADMIN_PAGE=0; }
+    tabs.innerHTML=subjects.map(s=>
+      '<button class="subj-tab'+(s===ADMIN_SEL_SUBJ?' active':'')+'" data-subj="'+s+'">'
+      +(SUBJ_ICON[s]||'')+'&nbsp;'+s+'</button>'
+    ).join('');
+    tabs.querySelectorAll('.subj-tab').forEach(btn=>{
+      btn.onclick=()=>{ ADMIN_SEL_SUBJ=btn.dataset.subj; ADMIN_PAGE=0; renderAdminList(); };
+    });
+  }
   const el=document.getElementById("admin-dungeon-list"); if(!el) return;
-  el.innerHTML=DUNGEONS.map(d=>{
+  const all=ADMIN_SEL_SUBJ?DUNGEONS.filter(d=>d.subject===ADMIN_SEL_SUBJ):DUNGEONS;
+  const totalPages=Math.max(1,Math.ceil(all.length/PAGE_SIZE));
+  if(ADMIN_PAGE>=totalPages) ADMIN_PAGE=0;
+  const paged=all.slice(ADMIN_PAGE*PAGE_SIZE,(ADMIN_PAGE+1)*PAGE_SIZE);
+  el.innerHTML=paged.map(d=>{
     const qc=d.enemies?d.enemies.length:0, bc=d.enemies?d.enemies.filter(e=>e.isBoss).length:0;
     return '<div style="background:rgba(255,255,255,.05);border:.5px solid rgba(255,255,255,.1);border-left:3px solid '+d.color+';border-radius:11px;padding:11px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">'
       +'<span style="font-size:22px;flex-shrink:0">'+d.icon+'</span>'
@@ -1323,6 +1385,7 @@ function renderAdminList(){
   }).join("");
   el.querySelectorAll("button[data-edit]").forEach(b=>{ b.onclick=()=>openEdit(b.dataset.edit); });
   el.querySelectorAll("button[data-del]").forEach(b=>{ b.onclick=()=>deleteDungeon(b.dataset.del); });
+  renderPager("admin-pager",totalPages,ADMIN_PAGE,(p)=>{ ADMIN_PAGE=p; renderAdminList(); });
 }
 function openEdit(id){
   const d=DUNGEONS.find(x=>x.id===id); if(!d) return;
@@ -1520,6 +1583,9 @@ window.addEventListener("load",()=>{
 
   // dpad
   document.getElementById("dctr").onclick=()=>{ const m=document.getElementById("dungeon-menu"); if(m.style.display==="flex") m.style.display="none"; else openDungeonMenu(); };
+  document.getElementById("dmenu-exit").onclick=()=>{ document.getElementById("dungeon-menu").style.display="none"; document.getElementById("exit-modal").style.display="flex"; };
+  document.getElementById("exit-cancel").onclick=()=>{ document.getElementById("exit-modal").style.display="none"; };
+  document.getElementById("exit-ok").onclick=()=>exitDungeon();
   document.getElementById("bu").onclick=()=>tryMove(0,-1);
   document.getElementById("bd").onclick=()=>tryMove(0,1);
   document.getElementById("bl").onclick=()=>tryMove(-1,0);
