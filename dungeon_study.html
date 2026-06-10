@@ -93,6 +93,7 @@ canvas#iso{display:block;width:100%;height:100%}
 @keyframes dmgFloat{0%{opacity:1;transform:translateY(0) scale(1.2)}100%{opacity:0;transform:translateY(-38px) scale(.8)}}
 .screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 18px;text-align:center;background:var(--bg);z-index:200;overflow-y:auto}
 .screen.hidden{display:none}
+#scr-select{justify-content:flex-start}
 .t-glow{position:absolute;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(0,128,158,.26) 0%,transparent 70%);top:34%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
 .t-logo{font-size:28px;font-weight:900;letter-spacing:2px;background:linear-gradient(135deg,#00C8FF,#00809E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
 .t-sub{font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:22px}
@@ -109,12 +110,10 @@ canvas#iso{display:block;width:100%;height:100%}
 .d-btn{width:100%;background:var(--bg2);border:.5px solid var(--border);border-left:3px solid var(--dc,var(--blue));border-radius:11px;padding:11px;margin-bottom:7px;display:flex;align-items:center;gap:9px;color:white;text-align:left;transition:background .15s}
 .d-btn:hover{background:var(--bg3)}
 .d-icn{font-size:20px;flex-shrink:0}.d-nm{font-weight:700;font-size:12px}.d-mt{font-size:9px;color:var(--muted);margin-top:1px}.d-arr{margin-left:auto;font-size:13px}
-.subj-grp{margin-bottom:10px}
-.subj-hdr{width:100%;background:var(--bg2);border:.5px solid var(--border);border-radius:9px;padding:9px 12px;display:flex;align-items:center;gap:8px;color:white;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s;margin-bottom:4px;font-family:inherit}
-.subj-hdr:hover{background:var(--bg3)}
-.subj-hdr .s-arr{margin-left:auto;font-size:11px;transition:transform .2s;display:inline-block}
-.subj-grp.collapsed .s-arr{transform:rotate(-90deg)}
-.subj-grp.collapsed .subj-body{display:none}
+.subj-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:6px;scrollbar-width:none}
+.subj-tabs::-webkit-scrollbar{display:none}
+.subj-tab{flex-shrink:0;background:var(--bg2);border:.5px solid var(--border);border-radius:20px;padding:6px 13px;color:var(--muted);font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .15s;white-space:nowrap}
+.subj-tab.active{background:var(--blue);border-color:var(--blue);color:white}
 .zukan-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px;width:100%}
 .zk-cell{background:var(--bg2);border:.5px solid var(--border);border-radius:9px;padding:8px 4px;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:72px}
 .zk-cell.locked{opacity:.35;filter:grayscale(1)}
@@ -222,6 +221,7 @@ canvas#iso{display:block;width:100%;height:100%}
     <div class="page">
       <div class="pg-h">ダンジョン選択</div>
       <div class="pg-sub">探索するダンジョンを選べ</div>
+      <div id="subj-tabs"></div>
       <div id="d-list"></div>
       <div id="curse-bar" style="display:none;background:rgba(226,75,74,.1);border:.5px solid rgba(226,75,74,.3);border-radius:10px;padding:9px 12px;margin-bottom:8px;align-items:center;gap:8px">
         <span style="font-size:16px">🔮</span>
@@ -615,7 +615,7 @@ const DEFAULT_DUNGEONS=[
 let DUNGEONS=[];
 let CURSE_LIST=[];
 const SUBJ_ICON={"数学":"📐","理科":"🔬","英語":"🌍","社会":"🏛️","国語":"📖"};
-const collapsedSubjects=new Set();
+let SEL_SUBJ=null;
 let ZUKAN={};
 
 // ════════════════════════════════════════════════
@@ -1285,39 +1285,29 @@ function updCurseBar(){
 // ════════════════════════════════════════════════
 let editingDungeonId=null;
 function renderDungeonList(){
+  const tabs=document.getElementById("subj-tabs");
+  if(tabs){
+    const subjects=[...new Set(DUNGEONS.map(d=>d.subject))];
+    if(!SEL_SUBJ||!subjects.includes(SEL_SUBJ)) SEL_SUBJ=subjects[0];
+    tabs.innerHTML=subjects.map(s=>
+      '<button class="subj-tab'+(s===SEL_SUBJ?' active':'')+'" data-subj="'+s+'">'
+      +(SUBJ_ICON[s]||'')+'&nbsp;'+s+'</button>'
+    ).join('');
+    tabs.querySelectorAll('.subj-tab').forEach(btn=>{
+      btn.onclick=()=>{ SEL_SUBJ=btn.dataset.subj; renderDungeonList(); };
+    });
+  }
   const el=document.getElementById("d-list"); if(!el) return;
-  const groups=[]; const seen={};
-  DUNGEONS.forEach(d=>{ if(!seen[d.subject]){seen[d.subject]=true;groups.push(d.subject);} });
-  el.innerHTML=groups.map(subj=>{
-    const list=DUNGEONS.filter(d=>d.subject===subj);
-    const icon=SUBJ_ICON[subj]||"📂";
-    const isClosed=collapsedSubjects.has(subj);
-    return '<div class="subj-grp'+(isClosed?" collapsed":"")+'" data-subj="'+subj+'">'
-      +'<button class="subj-hdr">'
-      +'<span>'+icon+'</span><span>'+subj+'</span>'
-      +'<span style="color:var(--muted);font-weight:400;font-size:10px">'+list.length+'ダンジョン</span>'
-      +'<span class="s-arr">▼</span>'
-      +'</button>'
-      +'<div class="subj-body">'
-      +list.map(d=>
-        '<button class="d-btn" style="--dc:'+d.color+'" data-id="'+d.id+'">'
-        +'<span class="d-icn">'+d.icon+'</span>'
-        +'<div><div class="d-nm">'+d.name+'</div>'
-        +'<div class="d-mt">'+d.subject+' ▸ '+(d.enemies?d.enemies.length:0)+'問 ▸ 探索</div></div>'
-        +'<span class="d-arr" style="color:'+d.color+'">▶</span>'
-        +'</button>'
-      ).join("")
-      +'</div></div>';
-  }).join("");
-  el.querySelectorAll(".d-btn").forEach(b=>{ b.onclick=()=>enterDungeon(DUNGEONS.find(x=>x.id===b.dataset.id)); });
-  el.querySelectorAll(".subj-hdr").forEach(h=>{
-    h.onclick=()=>{
-      const grp=h.closest(".subj-grp");
-      const subj=grp.dataset.subj;
-      if(collapsedSubjects.has(subj)) collapsedSubjects.delete(subj); else collapsedSubjects.add(subj);
-      grp.classList.toggle("collapsed");
-    };
-  });
+  const list=DUNGEONS.filter(d=>d.subject===SEL_SUBJ);
+  el.innerHTML=list.map(d=>
+    '<button class="d-btn" style="--dc:'+d.color+'" data-id="'+d.id+'">'
+    +'<span class="d-icn">'+d.icon+'</span>'
+    +'<div><div class="d-nm">'+d.name+'</div>'
+    +'<div class="d-mt">'+d.subject+' ▸ '+(d.enemies?d.enemies.length:0)+'問 ▸ 探索</div></div>'
+    +'<span class="d-arr" style="color:'+d.color+'">▶</span>'
+    +'</button>'
+  ).join('');
+  el.querySelectorAll('.d-btn').forEach(b=>{ b.onclick=()=>enterDungeon(DUNGEONS.find(x=>x.id===b.dataset.id)); });
 }
 function renderAdminList(){
   const el=document.getElementById("admin-dungeon-list"); if(!el) return;
