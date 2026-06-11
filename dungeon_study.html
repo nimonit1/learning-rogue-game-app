@@ -249,6 +249,7 @@ canvas#iso{display:block;width:100%;height:100%}
       </div>
     </div>
     <div class="hud-hp"><div class="hp-lab">HP</div><div class="hearts" id="hearts"></div></div>
+    <button id="mute-btn" onclick="toggleMute()" style="background:transparent;color:rgba(255,255,255,.45);font-size:15px;padding:2px 5px;flex-shrink:0;border-radius:6px" title="ミュート切替">🔊</button>
   </div>
 
   <div id="game-area" style="display:none">
@@ -853,6 +854,7 @@ function addExp(gain){
   return lv>prev;
 }
 function triggerLvUp(from,to){
+  playSeLevelUp();
   document.getElementById("lvup-sub").textContent="Lv."+to+" 到達 ／ "+titleFor(to);
   const b=document.getElementById("lvup-banner");
   b.classList.add("show");
@@ -908,6 +910,39 @@ function revFog(fog,pos){
     if(nr>=0&&nr<MSIZE&&nc>=0&&nc<MSIZE) fog[nr][nc]=true;
   }
 }
+
+// ════════════════════════════════════════════════
+//  AUDIO ENGINE
+// ════════════════════════════════════════════════
+let _AC=null,_MUTED=false;
+// AudioContextを取得（ユーザー操作後に初期化）
+function _ac(){ if(!_AC) _AC=new (window.AudioContext||window.webkitAudioContext)(); if(_AC.state==="suspended") _AC.resume(); return _AC; }
+// 基本ビープ音生成: freq=周波数, type=波形, dur=長さ(秒), vol=音量, dl=遅延(秒)
+function _b(f,t,d,v,dl){
+  if(_MUTED) return;
+  try{
+    const ac=_ac(),o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type=t||"square"; o.frequency.setValueAtTime(f,ac.currentTime+(dl||0));
+    g.gain.setValueAtTime(v||0.14,ac.currentTime+(dl||0));
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+(dl||0)+d);
+    o.start(ac.currentTime+(dl||0)); o.stop(ac.currentTime+(dl||0)+d);
+  }catch(e){}
+}
+// ── SE ──
+function playSeMove(){ _b(200,"triangle",.06,.07); }
+function playSeBattleStart(){ _b(300,"square",.1,.2); _b(400,"square",.1,.2,.12); _b(550,"square",.15,.25,.25); }
+function playSeCorrect(){ _b(523,"triangle",.1,.18); _b(659,"triangle",.1,.18,.12); _b(784,"triangle",.2,.22,.24); }
+function playSeWrong(){ _b(200,"square",.15,.2); _b(130,"sawtooth",.3,.2,.18); }
+function playSeTimeout(){ _b(280,"sawtooth",.1,.15); _b(220,"sawtooth",.12,.15,.13); _b(160,"sawtooth",.3,.2,.27); }
+function playSeCombo(){ _b(523,"square",.07,.18); _b(659,"square",.07,.18,.1); _b(784,"square",.07,.18,.2); _b(1047,"square",.18,.25,.3); }
+function playSeLevelUp(){ [523,659,784,1047,1318].forEach(function(f,i){ _b(f,"square",i<4?.1:.3,i<4?.12:.2,i*0.13); }); }
+function playSeItem(){ _b(880,"sine",.08,.14); _b(1100,"sine",.08,.14,.1); _b(1320,"sine",.15,.18,.2); }
+function playSeHint(){ _b(440,"sine",.12,.1); _b(550,"sine",.15,.1,.15); }
+function playSeCurse(){ _b(140,"sawtooth",.2,.2); _b(110,"sawtooth",.25,.2,.23); _b(90,"sawtooth",.4,.25,.5); }
+function playSeBossSealed(){ _b(80,"square",.3,.25); _b(55,"square",.4,.25,.35); }
+function playSeExit(){ [784,988,1175,1568].forEach(function(f,i){ _b(f,"sine",i<3?.1:.25,i<3?.15:.22,i*0.12); }); }
+function toggleMute(){ _MUTED=!_MUTED; const b=document.getElementById("mute-btn"); if(b) b.textContent=_MUTED?"🔇":"🔊"; }
 
 // ════════════════════════════════════════════════
 //  ISO RENDERER
@@ -1151,11 +1186,12 @@ function tryMove(dx,dy){
   const bossEnt=S.enemies.find(e=>e.enemy.isBoss&&!e.done);
   if(bossEnt&&bossEnt.x===nx&&bossEnt.y===ny){
     const normLeft=S.enemies.filter(e=>!e.enemy.isBoss&&!e.done).length;
-    if(normLeft>0){ showToast("⛔ ボスは封印中！雑魚を"+normLeft+"体倒せ",2500); return; }
+    if(normLeft>0){ showToast("⛔ ボスは封印中！雑魚を"+normLeft+"体倒せ",2500); playSeBossSealed(); return; }
   }
   S.prevPos={...S.pos};
   S.pos={x:nx,y:ny};
   S.map[ny][nx].vis=true;
+  playSeMove();
   revFog(S.fog,S.pos);
   updDpad();
 }
@@ -1172,7 +1208,7 @@ function updDpad(){
   if(dot) dot.style.display=CURSE_LIST.length>0?"block":"none";
 }
 function pickItem(it){
-  it.used=true;
+  it.used=true; playSeItem();
   if(it.type==="heal"){ S.player.hp=Math.min(S.player.hp+1,S.player.maxHp); showToast("💊 HP+1 回復！"); updHUD(); }
   else { S.exp2x=true; showToast("⭐ 次の正解でEXP×2！"); }
 }
@@ -1186,7 +1222,7 @@ function startBattle(me){
   S.curEnemy=me;
   Object.assign(S,{chosen:null,judged:false,isOk:false,hintUsed:false,timeLeft:20,rcPhase:true,rcCount:3,expGain:null,healGain:false});
   document.getElementById("bov").classList.remove("hidden");
-  renderBov(); startRecall();
+  renderBov(); startRecall(); playSeBattleStart();
 }
 function startCurseBattle(curse){
   const fakeEnemy={x:-1,y:-1,enemy:curse.enemy,done:false,isCurse:true,_ref:curse};
@@ -1194,7 +1230,7 @@ function startCurseBattle(curse){
   S.curEnemy=fakeEnemy;
   Object.assign(S,{chosen:null,judged:false,isOk:false,hintUsed:false,timeLeft:20,rcPhase:true,rcCount:3,expGain:null,healGain:false});
   document.getElementById("bov").classList.remove("hidden");
-  showGame(); renderBov(); startRecall();
+  showGame(); renderBov(); startRecall(); playSeCurse();
 }
 function startRecall(){
   clearTs(); S.rcPhase=true; S.rcCount=3; renderBov();
@@ -1213,8 +1249,16 @@ function updTimer(){
   const b=document.getElementById("tmr-b"), n=document.getElementById("tmr-n");
   if(b){ b.style.width=(t/20*100)+"%"; b.style.background=col; }
   if(n){ n.textContent=t+"s"; n.style.color=col; }
+  // カウントダウンSE
+  if(!_MUTED&&t>0&&t<=10){
+    if(t===10)      _b(330,"square",.09,.16);   // 警告開始の合図（低め）
+    else if(t===5)  _b(660,"square",.09,.2);    // 緊急開始の合図（高め）
+    else if(t<5)    _b(700,"square",.05,.13);   // 赤ゾーン: 高音ビープ
+    else            _b(440,"square",.05,.1);    // オレンジゾーン: 中音ビープ
+  }
 }
 function onTimeout(){
+  playSeTimeout();
   clearTs(); S.judged=true; S.isOk=false; S.chosen=null;
   S.player.hp=Math.max(0,S.player.hp-2); S.player.combo=0;
   addCurse(S.curEnemy.enemy, 2);
@@ -1228,6 +1272,7 @@ function onChoice(c){
   const en=S.curEnemy.enemy, ok=(c.trim()===en.ans.trim()||c===en.ans); S.isOk=ok;
   const isCurse=!!(S.curEnemy&&S.curEnemy.isCurse);
   if(ok){
+    playSeCorrect();
     if(!isCurse) S.curEnemy.done=true;
     S.player.combo=(S.player.combo||0)+1;
     const fast=S.timeLeft>10;
@@ -1242,13 +1287,14 @@ function onChoice(c){
       CURSE_LIST.splice(ci,1);
       if(lost>0&&S.player.hp<S.player.maxHp){ S.player.hp=Math.min(S.player.maxHp,S.player.hp+lost); S.healGain=true; showToast("💖 呪い解除！HP+"+lost+"回復！",2500); }
     }
-    if(S.player.combo>=3&&S.player.hp<S.player.maxHp){ S.player.hp++; S.player.combo=0; S.healGain=true; }
+    if(S.player.combo>=3&&S.player.hp<S.player.maxHp){ S.player.hp++; S.player.combo=0; S.healGain=true; playSeCombo(); }
     if(en.isBoss&&!isCurse&&S.player.hp<S.player.maxHp){ S.player.hp=S.player.maxHp; S.healGain=true; }
     spawnDmgNum("+"+gain+" EXP",true);
     zukanRecord(en,true);
     S.log.push("✅ "+en.name+"撃破 +"+gain+"EXP"+(fast?" ⚡":"")+(S.healGain?" 💖":""));
     setTimeout(()=>{ S.expGain=null; S.healGain=false; updHUD(); },1100);
   } else {
+    playSeWrong();
     S.player.hp=Math.max(0,S.player.hp-1); S.player.combo=0;
     addCurse(en,1);
     spawnDmgNum("HP-1",false);
@@ -1378,7 +1424,7 @@ function renderBov(){
     +'</div></div></div>'+(S.rcPhase?rc:bat);
   document.querySelectorAll(".ch").forEach(b=>{ if(!b.disabled) b.onclick=()=>onChoice(b.dataset.c); });
   const hb=document.getElementById("h-btn");
-  if(hb) hb.onclick=()=>{ S.hintUsed=true; renderBov(); if(!S.rcPhase) startBTimer(); };
+  if(hb) hb.onclick=()=>{ S.hintUsed=true; playSeHint(); renderBov(); if(!S.rcPhase) startBTimer(); };
   const nb=document.getElementById("n-btn"); if(nb) nb.onclick=backToMap;
   const ncb=document.getElementById("next-curse-btn"); if(ncb) ncb.onclick=()=>{ if(CURSE_LIST.length>0) startCurseBattle(CURSE_LIST[0]); else backToMap(); };
   const rb=document.getElementById("retry-btn");
@@ -1680,6 +1726,7 @@ function enterDungeon(d){
 }
 
 function goClear(){
+  playSeExit();
   clearTs(); S.scene="clear"; hideGame();
   const {lv}=syncLevel();
   document.getElementById("scr-clear").classList.remove("hidden");
