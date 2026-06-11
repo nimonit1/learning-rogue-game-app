@@ -12,7 +12,7 @@ html,body{height:100%;overflow:hidden}
 body{font-family:'Noto Sans JP','Yu Gothic',sans-serif;background:var(--bg);color:rgba(255,255,255,.92)}
 button{font-family:inherit;cursor:pointer;border:none;outline:none}
 button:active{transform:scale(.95)}
-#app{width:100%;max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
+#app{width:100%;max-width:100%;margin:0 auto;height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden}
 #hud{background:rgba(10,13,20,.96);border-bottom:1px solid rgba(255,255,255,.07);padding:6px 10px;display:flex;align-items:center;gap:8px;flex-shrink:0;z-index:50}
 .hud-av{width:30px;height:30px;flex-shrink:0;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.15)}
 .hud-mid{flex:1;min-width:0}
@@ -138,6 +138,99 @@ canvas#iso{display:block;width:100%;height:100%}
 .adm-ta{width:100%;background:rgba(255,255,255,.05);border:.5px solid var(--border);border-radius:10px;color:rgba(255,255,255,.85);font-size:11px;font-family:'Courier New',monospace;padding:10px;resize:vertical;outline:none;line-height:1.6}
 .adm-ta:focus{border-color:var(--blue)}
 .adm-err{font-size:10px;color:var(--red);margin-top:4px;display:none}
+
+/* ── PC・タブレット向けレスポンシブ ── */
+@media (min-width:600px){
+  .hud-av{width:40px;height:40px}
+  #hud{padding:8px 16px;gap:12px}
+  .hud-name{font-size:13px;max-width:200px}
+  .hud-ttl{font-size:11px;max-width:160px}
+  .lv-badge{font-size:11px;padding:2px 8px}
+  .exp-bg{height:7px}
+  .exp-num{font-size:10px}
+  .heart{font-size:16px}
+  /* dpad: 固定幅3列で中央寄せ */
+  #dpad{padding:10px 16px 14px;gap:6px;grid-template-columns:80px 80px 80px;justify-content:center}
+  .dbtn{width:80px;height:66px;font-size:26px;border-radius:14px}
+  .dctr{width:60px;height:60px;font-size:24px}
+  .dspc{width:80px;height:66px}
+  .dinfo{font-size:10px}
+  /* バトル画面: 読みやすい最大幅で中央寄せ */
+  .bov-in{padding:16px 28px 28px;max-width:680px;margin:0 auto;width:100%}
+  .b-loc{font-size:11px}
+  .q-txt{font-size:16px}
+  .q-lbl{font-size:10px}
+  .ch{font-size:14px;padding:13px 10px}
+  .en-nm{font-size:16px}
+  .en-sw{width:96px;height:96px}
+  .rc-ttl{font-size:16px}
+  .rc-num{font-size:44px}
+  .next-btn{font-size:15px;padding:13px}
+  /* 各画面共通 */
+  .page{max-width:100%;padding:0 28px 24px}
+  .pg-h{font-size:18px;margin:12px 0 4px}
+  .pg-sub{font-size:12px}
+  .d-btn{padding:14px 16px;margin-bottom:9px}
+  .d-nm{font-size:14px}
+  .d-mt{font-size:11px}
+  .d-icn{font-size:26px}
+  .d-arr{font-size:16px}
+  .subj-tab{font-size:13px;padding:7px 18px}
+  #d-list{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  #admin-dungeon-list{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+  .t-logo{font-size:38px}
+  .t-sub{font-size:12px}
+  .t-rules{font-size:11px}
+  .big-btn{font-size:15px;max-width:360px;padding:14px}
+  .ghost-btn{max-width:360px}
+  .av-grid{grid-template-columns:repeat(5,1fr);max-width:420px}
+  .name-inp{font-size:15px}
+  .end-icon{font-size:62px}
+  .end-h{font-size:24px}
+  .end-sub{font-size:13px}
+  .stat-box{max-width:400px}
+  .s-row{font-size:13px}
+  .log-box{max-width:400px;font-size:11px}
+  .zukan-grid{grid-template-columns:repeat(5,1fr)}
+  .zk-nm{font-size:10px}
+  .zk-star{font-size:10px}
+  .adm-inp{font-size:14px}
+  .adm-ta{font-size:13px}
+}
+@media (min-width:900px){
+  .page{padding:0 40px 32px}
+  #dpad{padding:12px 24px 18px;gap:8px;grid-template-columns:100px 100px 100px}
+  .dbtn{width:100px;height:82px;font-size:30px}
+  .dctr{width:72px;height:72px;font-size:28px}
+  .dspc{width:100px;height:82px}
+  .bov-in{max-width:720px;padding:20px 36px 36px}
+  .q-txt{font-size:18px}
+  .ch{font-size:15px;padding:15px 12px}
+  .en-sw{width:112px;height:112px}
+  .en-nm{font-size:18px}
+  .rc-num{font-size:52px}
+  .zukan-grid{grid-template-columns:repeat(7,1fr)}
+}
+@media (min-width:1200px){
+  #dpad{grid-template-columns:120px 120px 120px;gap:10px}
+  .dbtn{width:120px;height:96px;font-size:34px}
+  .dctr{width:84px;height:84px;font-size:32px}
+  .dspc{width:120px;height:96px}
+  .bov-in{max-width:800px;padding:24px 44px 44px}
+  .q-txt{font-size:20px}
+  .ch{font-size:17px;padding:18px 14px}
+  .en-sw{width:130px;height:130px}
+  .en-nm{font-size:20px}
+  .rc-num{font-size:60px}
+  .next-btn{font-size:17px;padding:16px}
+  .heart{font-size:20px}
+  #hud{padding:10px 24px;gap:16px}
+  .hud-av{width:48px;height:48px}
+  .hud-name{font-size:15px;max-width:240px}
+  .lv-badge{font-size:13px;padding:3px 10px}
+  .exp-bg{height:8px}
+  .exp-num{font-size:12px}
+}
 </style>
 </head>
 <body>
@@ -187,7 +280,7 @@ canvas#iso{display:block;width:100%;height:100%}
     </div>
     <div id="bov" class="hidden"><div class="bov-in" id="bov-in"></div></div>
     <div id="dpad">
-      <div class="dspc"></div><button class="dbtn" id="bu">↑</button><div class="dspc"></div>
+      <div class="dspc"></div><button class="dbtn" id="bu">↑</button><button class="dbtn" id="bzoom" title="ズーム切替">🔍</button>
       <button class="dbtn" id="bl">←</button>
       <button class="dctr" id="dctr">⚔<span id="curse-dot" style="display:none;position:absolute;top:1px;right:1px;width:8px;height:8px;border-radius:50%;background:#E24B4A;border:1.5px solid #0a0d14"></span></button>
       <button class="dbtn" id="br">→</button>
@@ -401,7 +494,7 @@ function expForLevel(lv){ let s=0; for(let i=1;i<lv;i++) s+=expNeeded(i); return
 const TITLES=[[1,"見習い冒険者"],[5,"冒険者"],[10,"熟練冒険者"],[20,"勇者"],[30,"猛者"],[50,"英雄"],[75,"伝説の戦士"],[100,"覇者"],[200,"不滅の英雄"],[500,"宇宙の守護者"],[1000,"時の支配者"],[9999,"全知の存在"]];
 function titleFor(lv){ let t=TITLES[0]; for(const [l,n] of TITLES){ if(lv>=l) t=[l,n]; } return t[1]; }
 const MSIZE=9;
-const APP_VERSION="1.0.1";
+const APP_VERSION="1.1.0";
 const LS_KEY="dungeon_study_dungeons_v4";
 const COLOR_PRESETS=["#00809E","#EA8712","#9B59B6","#E24B4A","#27AE60","#2980B9","#C0392B","#8E44AD","#16A085","#D35400"];
 const AVATARS=[
@@ -630,10 +723,75 @@ const DEFAULT_DUNGEONS=[
     {id:"jc_boss",name:"古典の守護者",tier:2,exp:50,difficulty:4,isBoss:true,q:"「徒然草」の冒頭「つれづれなるままに、日暮らし、硯にむかひて〜」を現代語に訳せ",ans:"することもなく所在ない気持ちのままに、一日中、硯に向かって（書きつけると）",hint:"つれづれ＝所在ない・退屈",explanation:"つれづれなるまま＝退屈・所在ない気持ちのまま。日暮らし＝一日中。硯にむかひて＝硯に向かって（文章を書く）。"},
   ]},
 
+  // ══════════════════════════════
+  //  音楽（中3）
+  // ══════════════════════════════
+  {id:"mus_basic",name:"音楽の神殿",subject:"音楽",icon:"🎵",color:"#8E44AD",enemies:[
+    {id:"mus1",name:"音符スライム",tier:0,exp:20,difficulty:1,q:"音楽記号「f」（フォルテ）の意味は？",ans:"強く",choices:["強く","弱く","速く","遅く"],hint:"forte の略",explanation:"f（フォルテ）は強く演奏することを示す。対義語は p（ピアノ：弱く）。ff はフォルティッシモでさらに強い。"},
+    {id:"mus2",name:"音名ゴブリン",tier:0,exp:20,difficulty:1,q:"ト音記号が示す音は何の音の位置か？",ans:"ト（G）の音",choices:["ト（G）の音","ハ（C）の音","ヘ（F）の音","ニ（D）の音"],hint:"五線の第2線を通る記号",explanation:"ト音記号（G clef）は第2線がト（G4）の音であることを示す。日本語音名「ハニホヘトイロ」は英語のCDEFGABに対応。"},
+    {id:"mus3",name:"速度記号オーク",tier:1,exp:28,difficulty:2,q:"速度記号「Andante（アンダンテ）」の意味は？",ans:"歩くような速さで",choices:["歩くような速さで","速く","ゆっくりと","非常に速く"],hint:"andare（イタリア語：歩く）から",explanation:"Andante は歩くような速さ。Largo（ゆっくり）< Andante < Moderato（中くらい）< Allegro（速く）の順。"},
+    {id:"mus4",name:"和音のトロール",tier:1,exp:28,difficulty:2,q:"ドミソで構成される和音を何という？",ans:"ハ長調の主和音（C major）",choices:["ハ長調の主和音（C major）","属和音","下属和音","減三和音"],hint:"Cメジャーコード",explanation:"ドミソはハ長調（Cメジャー）の主和音（トニック）。主音（ド）・第3音（ミ）・第5音（ソ）の3音で構成される長三和音。"},
+    {id:"mus5",name:"楽器分類の魔術師",tier:2,exp:38,difficulty:3,q:"弦楽四重奏の編成に含まれない楽器は？",ans:"コントラバス",choices:["コントラバス","第1バイオリン","ビオラ","チェロ"],hint:"4種類：バイオリン×2・ビオラ・チェロ",explanation:"弦楽四重奏は第1・第2バイオリン、ビオラ、チェロの4人編成。コントラバスはオーケストラに含まれるが四重奏には入らない。"},
+    {id:"mus6",name:"作曲家のオーガ",tier:2,exp:38,difficulty:3,q:"交響曲第9番「合唱」を作曲したドイツの作曲家は？",ans:"ベートーヴェン",choices:["ベートーヴェン","モーツァルト","バッハ","シューベルト"],hint:"聴覚を失いながらも作曲した",explanation:"ルートヴィヒ・ヴァン・ベートーヴェンが作曲。第4楽章に「歓喜の歌（喜びの歌）」の合唱が入る。"},
+    {id:"mus_boss",name:"音楽の神",tier:2,exp:50,difficulty:4,isBoss:true,q:"「春の海」を作曲した日本の音楽家の名前と、使われている楽器を2つ答えよ",ans:"宮城道雄。箏と尺八",hint:"お正月によく流れる曲",explanation:"宮城道雄（みやぎみちよ）が1929年に作曲。箏（こと）と尺八（しゃくはち）の二重奏。お正月の定番曲として知られる。"},
+  ]},
+
+  // ══════════════════════════════
+  //  美術（中3）
+  // ══════════════════════════════
+  {id:"art_basic",name:"美術の迷宮",subject:"美術",icon:"🎨",color:"#D35400",enemies:[
+    {id:"art1",name:"色彩スライム",tier:0,exp:20,difficulty:1,q:"光の三原色の組み合わせは？",ans:"赤・緑・青",choices:["赤・緑・青","赤・黄・青","赤・黄・緑","青・黄・紫"],hint:"RGBとも呼ばれる",explanation:"光の三原色はRed・Green・Blue（RGB）。混ぜると白になる（加法混色）。絵の具の三原色（CMY）とは異なる。"},
+    {id:"art2",name:"遠近法ゴブリン",tier:0,exp:20,difficulty:1,q:"透視図法で、遠くに伸びる平行線が収束する点を何という？",ans:"消失点",choices:["消失点","焦点","原点","基点"],hint:"そこに消えていくように見える",explanation:"透視図法（遠近法）では平行線が1点に集まる。その点を消失点という。1点透視・2点透視などがある。"},
+    {id:"art3",name:"日本画オーク",tier:1,exp:28,difficulty:2,q:"水墨画を日本に広め「秋冬山水図」で知られる室町時代の画僧は？",ans:"雪舟",choices:["雪舟","葛飾北斎","俵屋宗達","長谷川等伯"],hint:"涙でネズミを描いた逸話が有名",explanation:"雪舟（せっしゅう）は室町時代の禅僧・画家。中国で水墨画を学び帰国後に独自の画風を確立した。"},
+    {id:"art4",name:"色の三属性トロール",tier:1,exp:28,difficulty:2,q:"色の三属性に含まれないものは？",ans:"質感",choices:["質感","色相","明度","彩度"],hint:"色相・明度・○○",explanation:"色の三属性は色相（色の種類）・明度（明るさ）・彩度（鮮やかさ）。質感（テクスチャ）は三属性に含まれない。"},
+    {id:"art5",name:"西洋美術の魔術師",tier:2,exp:38,difficulty:3,q:"「モナリザ」を描いたイタリア・ルネサンスの画家は？",ans:"レオナルド・ダ・ヴィンチ",choices:["レオナルド・ダ・ヴィンチ","ミケランジェロ","ラファエロ","ボッティチェリ"],hint:"万能の天才と呼ばれた",explanation:"レオナルド・ダ・ヴィンチが1503年頃に制作。ルーヴル美術館所蔵。科学・建築・音楽にも精通した万能の天才。"},
+    {id:"art6",name:"版画のオーガ",tier:2,exp:38,difficulty:3,q:"「富嶽三十六景」で有名な江戸時代の浮世絵師は？",ans:"葛飾北斎",choices:["葛飾北斎","歌川広重","喜多川歌麿","東洲斎写楽"],hint:"「神奈川沖浪裏」が代表作",explanation:"葛飾北斎（かつしかほくさい）は江戸時代の浮世絵師。「富嶽三十六景」の「神奈川沖浪裏」は世界的に有名。"},
+    {id:"art_boss",name:"美の守護者",tier:2,exp:50,difficulty:4,isBoss:true,q:"「ひまわり」を描いたオランダの画家の名前と、その絵画の画風の特徴を1つ述べよ",ans:"フィンセント・ファン・ゴッホ。厚い絵の具と力強い筆触（または鮮やかな色彩など）",hint:"耳を切ったことでも有名な画家",explanation:"ゴッホ（1853〜1890）はポスト印象派の画家。黄色いひまわりシリーズは複数点存在する。うねるような力強い筆致と鮮烈な色彩が特徴。"},
+  ]},
+
+  // ══════════════════════════════
+  //  保健体育（中3）
+  // ══════════════════════════════
+  {id:"pe_basic",name:"体育の城",subject:"保健体育",icon:"⚽",color:"#16A085",enemies:[
+    {id:"pe1",name:"スポーツルールスライム",tier:0,exp:20,difficulty:1,q:"バレーボールで1チームがコート内に入れる人数は？",ans:"6人",choices:["6人","5人","7人","9人"],hint:"三列×二列の配置",explanation:"バレーボールは6人制が標準（9人制もある）。サーブ権が移るとコートを時計回りにローテーションする。"},
+    {id:"pe2",name:"応急処置ゴブリン",tier:0,exp:20,difficulty:1,q:"心肺蘇生（CPR）で胸骨圧迫を行う目安の速さは？",ans:"1分間に100〜120回",choices:["1分間に100〜120回","1分間に30〜50回","1分間に60〜80回","1分間に150〜180回"],hint:"テンポの目安は「アンパンマンのマーチ」",explanation:"胸骨圧迫は1分間に100〜120回のリズムで行う。圧迫の深さは約5〜6cm。人工呼吸30回に2回の割合が基本。"},
+    {id:"pe3",name:"反則オーク",tier:1,exp:28,difficulty:2,q:"バスケットボールで、一度止めたドリブルを再開したときの反則名は？",ans:"ダブルドリブル",choices:["ダブルドリブル","トラベリング","オフサイド","ファウル"],hint:"ダブル＝二重",explanation:"ダブルドリブルは一度止めたドリブルを再開する反則。トラベリングはボールを持って3歩以上歩く反則。"},
+    {id:"pe4",name:"運動生理トロール",tier:1,exp:28,difficulty:2,q:"酸素を使って長時間継続できる運動を何という？",ans:"有酸素運動",choices:["有酸素運動","無酸素運動","等尺性運動","等張性運動"],hint:"ジョギング・水泳が代表例",explanation:"有酸素運動は酸素を使ってエネルギーを生産する低〜中強度の持続的な運動。脂肪を燃焼しやすく心肺機能の向上に効果的。"},
+    {id:"pe5",name:"健康知識の魔術師",tier:2,exp:38,difficulty:3,q:"感染症を引き起こす微生物のうち、細胞を持たず生物の細胞内でのみ増殖するものは？",ans:"ウイルス",choices:["ウイルス","細菌","真菌","寄生虫"],hint:"インフルエンザや新型コロナの原因",explanation:"ウイルスは細胞を持たず、宿主の細胞を使って増殖する。抗生物質は効かず、ワクチンや抗ウイルス薬で対処する。"},
+    {id:"pe6",name:"体の仕組みのオーガ",tier:2,exp:38,difficulty:3,q:"筋肉を収縮させる命令を脳から筋肉に伝える神経は？",ans:"運動神経",choices:["運動神経","感覚神経","自律神経","中枢神経"],hint:"脳→筋肉の向き",explanation:"運動神経は中枢（脳・脊髄）から筋肉に命令を送る遠心性神経。感覚神経は体の感覚を中枢に送る求心性神経。"},
+    {id:"pe_boss",name:"体育の覇者",tier:2,exp:50,difficulty:4,isBoss:true,q:"熱中症が疑われる人への応急処置として行うべき対応を2つ答えよ",ans:"涼しい場所に移動させる・水分と塩分を補給する（など）",hint:"まず体を冷やすことが最優先",explanation:"①涼しい場所（日陰・冷房）に移動。②水分と塩分を補給。③衣服をゆるめ首・脇の下・足の付け根を冷却。意識がない場合はすぐ救急車を呼ぶ。"},
+  ]},
+
+  // ══════════════════════════════
+  //  技術（中3）
+  // ══════════════════════════════
+  {id:"tech_basic",name:"技術の工房",subject:"技術",icon:"🔧",color:"#2980B9",enemies:[
+    {id:"tech1",name:"電気単位スライム",tier:0,exp:20,difficulty:1,q:"電流の単位は何か？",ans:"アンペア（A）",choices:["アンペア（A）","ボルト（V）","オーム（Ω）","ワット（W）"],hint:"記号はA",explanation:"電流はA（アンペア）、電圧はV（ボルト）、抵抗はΩ（オーム）、電力はW（ワット）で表す。"},
+    {id:"tech2",name:"直列回路ゴブリン",tier:0,exp:20,difficulty:1,q:"直列回路において、各部分を流れる電流の大きさはどうなる？",ans:"どこでも等しい",choices:["どこでも等しい","抵抗が大きいほど小さくなる","枝ごとに分かれる","抵抗が小さいほど大きくなる"],hint:"電流の通り道が一本道",explanation:"直列回路は電流の通り道が1本なので、どの部分でも電流の大きさは等しい。並列回路では電流が枝ごとに分かれる。"},
+    {id:"tech3",name:"オームのオーク",tier:1,exp:28,difficulty:2,q:"抵抗10Ωに電流2Aが流れているとき、両端の電圧は何Vか？",ans:"20V",choices:["20V","5V","12V","0.2V"],hint:"V＝R×I（オームの法則）",explanation:"オームの法則：V = R × I = 10 × 2 = 20V。電圧＝抵抗×電流の関係が成り立つ。"},
+    {id:"tech4",name:"2進数トロール",tier:1,exp:28,difficulty:2,q:"コンピュータが内部でデータを処理するために使う数の体系は？",ans:"2進数",choices:["2進数","10進数","8進数","16進数"],hint:"0と1だけで表す",explanation:"コンピュータは電気の「オン（1）/オフ（0）」を使う2進数でデータを処理する。人間が使う10進数は2進数に変換して扱われる。"},
+    {id:"tech5",name:"プログラム制御の魔術師",tier:2,exp:38,difficulty:3,q:"プログラムで、条件が真のとき処理Aを、偽のとき処理Bを実行する制御構造を何という？",ans:"条件分岐",choices:["条件分岐","繰り返し（ループ）","関数定義","変数宣言"],hint:"if-else文が代表例",explanation:"条件分岐は条件によって実行する処理を変える構造（if-else）。繰り返し（for/while）・関数定義とともにプログラムの3大構造のひとつ。"},
+    {id:"tech6",name:"木材加工のオーガ",tier:2,exp:38,difficulty:3,q:"木材を木目に対して直角に切ることを何という？",ans:"横びき",choices:["横びき","縦びき","斜めびき","輪切り"],hint:"木目を横切るように切る",explanation:"木目に直角に切るのが横びき（よこびき）、木目に沿って切るのが縦びき（たてびき）。横びき用のノコギリを使うと効率よく切れる。"},
+    {id:"tech_boss",name:"技術の匠",tier:2,exp:50,difficulty:4,isBoss:true,q:"電気の直列接続と並列接続の違いを、電流と電圧の観点から説明せよ",ans:"直列：電流は等しく電圧は分かれる。並列：電圧は等しく電流は分かれる。",hint:"直列は一本道、並列は複数の道",explanation:"直列：電流は全体で等しく、電圧は各抵抗に分配される。並列：各枝の電圧は電源電圧と等しく、電流は枝ごとに分かれ合計が全体になる。"},
+  ]},
+
+  // ══════════════════════════════
+  //  家庭科（中3）
+  // ══════════════════════════════
+  {id:"home_basic",name:"家庭科の館",subject:"家庭科",icon:"🍳",color:"#C0392B",enemies:[
+    {id:"home1",name:"栄養素スライム",tier:0,exp:20,difficulty:1,q:"五大栄養素のうち、ごはんやパンに多く含まれる主要なエネルギー源は？",ans:"炭水化物",choices:["炭水化物","ビタミン","ミネラル","水"],hint:"糖質とも呼ばれる",explanation:"炭水化物（糖質）は体の主要なエネルギー源。五大栄養素はたんぱく質・脂質・炭水化物・ビタミン・ミネラル。"},
+    {id:"home2",name:"食品表示ゴブリン",tier:0,exp:20,difficulty:1,q:"食品の「消費期限」の正しい説明は？",ans:"その日までに食べないと安全性が保証されない期限",choices:["その日までに食べないと安全性が保証されない期限","おいしく食べられる期限","長期保存品に使われる期限","製造から1年以内の期限"],hint:"消費期限を過ぎたものは食べない",explanation:"消費期限は安全に食べられる期限（弁当・サンドイッチ等）。賞味期限は品質が保証される期限で、過ぎても直ちに危険ではない（スナック・缶詰等）。"},
+    {id:"home3",name:"調理技術オーク",tier:1,exp:28,difficulty:2,q:"ミシンで縫い始めと縫い終わりに行う、糸のほつれを防ぐ操作を何という？",ans:"返し縫い",choices:["返し縫い","本縫い","まつり縫い","並み縫い"],hint:"少し戻ってから縫う",explanation:"返し縫いは縫い始めと終わりに2〜3針逆方向に縫う操作。糸の端がほつれるのを防ぐために必須の技術。"},
+    {id:"home4",name:"被服のトロール",tier:1,exp:28,difficulty:2,q:"衣類の洗濯表示で、桶に×印がついているマークの意味は？",ans:"家庭洗濯不可",choices:["家庭洗濯不可","乾燥機使用不可","漂白不可","アイロン不可"],hint:"×は禁止を表す",explanation:"桶のマークは洗濯方法を示す。×がついていると家庭洗濯ができないことを意味し、クリーニングに出す必要がある。"},
+    {id:"home5",name:"ビタミンの魔術師",tier:2,exp:38,difficulty:3,q:"脂溶性ビタミンに分類されるものは？",ans:"ビタミンA",choices:["ビタミンA","ビタミンC","ビタミンB1","ビタミンB2"],hint:"油に溶ける。体内に蓄積される",explanation:"脂溶性ビタミンはA・D・E・K。水溶性はB群・C。脂溶性は体内に蓄積されやすく過剰摂取に注意が必要。"},
+    {id:"home6",name:"住環境のオーガ",tier:2,exp:38,difficulty:3,q:"住宅で結露が発生しやすい条件として正しいものは？",ans:"室内外の温度差が大きく、室内の湿度が高いとき",choices:["室内外の温度差が大きく、室内の湿度が高いとき","室内外の温度差が小さいとき","室内の湿度が低いとき","外気温が高いとき"],hint:"冬の窓に水滴が付く現象",explanation:"結露は暖かく湿った空気が冷たい面に触れて水分が凝結する現象。冬に窓や壁に発生しやすい。断熱・換気・除湿が対策になる。"},
+    {id:"home_boss",name:"家庭科の達人",tier:2,exp:50,difficulty:4,isBoss:true,q:"五大栄養素をすべて答えよ",ans:"たんぱく質・脂質・炭水化物・ビタミン・ミネラル",hint:"体を作り・動かし・調節する栄養素",explanation:"五大栄養素：①たんぱく質（体の材料）②脂質（エネルギー・細胞膜）③炭水化物（主要エネルギー源）④ビタミン（体の調節）⑤ミネラル（骨・歯など）。"},
+  ]},
+
 ];
 let DUNGEONS=[];
 let CURSE_LIST=[];
-const SUBJ_ICON={"数学":"📐","理科":"🔬","英語":"🌍","社会":"🏛️","国語":"📖"};
+const SUBJ_ICON={"数学":"📐","理科":"🔬","英語":"🌍","社会":"🏛️","国語":"📖","音楽":"🎵","美術":"🎨","保健体育":"⚽","技術":"🔧","家庭科":"🍳"};
 let SEL_SUBJ=null;
 let ADMIN_SEL_SUBJ=null;
 let SEL_PAGE=0;
@@ -666,7 +824,12 @@ function saveDungeons(){ try{ localStorage.setItem(LS_KEY,JSON.stringify(DUNGEON
 function loadDungeons(){
   try{
     const raw=localStorage.getItem(LS_KEY);
-    if(raw){ const arr=JSON.parse(raw); if(arr&&arr.length>0){ DUNGEONS.length=0; arr.forEach(d=>DUNGEONS.push(d)); return; } }
+    if(raw){ const arr=JSON.parse(raw); if(arr&&arr.length>0){
+      DUNGEONS.length=0; arr.forEach(d=>DUNGEONS.push(d));
+      // DEFAULTに追加されたがlocalStorageにないダンジョンをマージ
+      DEFAULT_DUNGEONS.forEach(def=>{ if(!DUNGEONS.find(d=>d.id===def.id)) DUNGEONS.push(JSON.parse(JSON.stringify(def))); });
+      saveDungeons(); return;
+    }}
   }catch(e){}
   DEFAULT_DUNGEONS.forEach(d=>DUNGEONS.push(JSON.parse(JSON.stringify(d))));
   saveDungeons();
@@ -749,6 +912,10 @@ function revFog(fog,pos){
 // ════════════════════════════════════════════════
 //  ISO RENDERER
 // ════════════════════════════════════════════════
+const ZOOM_LEVELS=[{TW:28,TH:17,WH:18,SPR:20},{TW:40,TH:24,WH:26,SPR:28},{TW:56,TH:34,WH:36,SPR:40}];
+const ZOOM_ICONS=["🔭","🔍","🔎"];
+let MAP_ZOOM_IDX=1;
+function applyZoom(idx){ MAP_ZOOM_IDX=idx; const z=ZOOM_LEVELS[idx]; OBL.TW=z.TW; OBL.TH=z.TH; OBL.WH=z.WH; OBL.SPR=z.SPR; const b=document.getElementById("bzoom"); if(b) b.textContent=ZOOM_ICONS[idx]; }
 const OBL={TW:40,TH:24,WH:26,SPR:28};
 const ISO={canvas:null,ctx:null,anim:0};
 function isoInit(){ ISO.canvas=document.getElementById("iso"); ISO.ctx=ISO.canvas.getContext("2d"); isoResize(); window.addEventListener("resize",isoResize); }
@@ -1583,6 +1750,7 @@ window.addEventListener("load",()=>{
 
   // dpad
   document.getElementById("dctr").onclick=()=>{ const m=document.getElementById("dungeon-menu"); if(m.style.display==="flex") m.style.display="none"; else openDungeonMenu(); };
+  document.getElementById("bzoom").onclick=()=>{ applyZoom((MAP_ZOOM_IDX+1)%ZOOM_LEVELS.length); };
   document.getElementById("dmenu-exit").onclick=()=>{ document.getElementById("dungeon-menu").style.display="none"; document.getElementById("exit-modal").style.display="flex"; };
   document.getElementById("exit-cancel").onclick=()=>{ document.getElementById("exit-modal").style.display="none"; };
   document.getElementById("exit-ok").onclick=()=>exitDungeon();
@@ -1598,7 +1766,11 @@ window.addEventListener("load",()=>{
   document.getElementById("btn-go-ttl").onclick=()=>{ S.player.totalExp=0; S.player.hp=S.player.maxHp; S.player.combo=0; syncLevel(); document.getElementById("scr-go").classList.add("hidden"); showScr("scr-title"); };
 
   // keyboard
-  document.addEventListener("keydown",e=>{ const d=DIRS[e.key]; if(d){ e.preventDefault(); tryMove(d[0],d[1]); } });
+  document.addEventListener("keydown",e=>{
+    const d=DIRS[e.key]; if(d){ e.preventDefault(); tryMove(d[0],d[1]); }
+    if(e.key==="+"||e.key==="=") applyZoom(Math.min(MAP_ZOOM_IDX+1,ZOOM_LEVELS.length-1));
+    if(e.key==="-") applyZoom(Math.max(MAP_ZOOM_IDX-1,0));
+  });
 
   isoInit(); isoLoop();
   document.getElementById("t-version").textContent="v"+APP_VERSION;
